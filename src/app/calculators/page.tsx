@@ -45,6 +45,21 @@ export default function CalculatorsPage(): JSX.Element {
             </Button>
           </div>
         </div>
+
+        <div className="relative p-6 border rounded-lg hover:border-primary transition-colors">
+          <Calculator className="w-12 h-12 mb-4" />
+          <h2 className="text-lg font-semibold mb-2">Share Averaging Calculator</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Calculate how many shares to buy to reach your target average price.
+          </p>
+          <div className="flex justify-end">
+            <Button asChild>
+              <Link href="/calculators/share-averaging">
+                Try Calculator
+              </Link>
+            </Button>
+          </div>
+        </div>
         {/* More calculators to be added */}
       </div>
     </div>
