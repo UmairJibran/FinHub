@@ -1,7 +1,7 @@
-import { ArrowLeft, Calculator, Coins } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, Calculator, Coins } from 'lucide-react';
+import Link from 'next/link';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 
 export default function CalculatorsPage(): JSX.Element {
   return (
@@ -20,13 +20,12 @@ export default function CalculatorsPage(): JSX.Element {
           <Calculator className="w-12 h-12 mb-4" />
           <h2 className="text-lg font-semibold mb-2">SIP to SWP Calculator</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Plan your investment journey from SIP to SWP with our advanced calculator
+            Plan your investment journey from SIP to SWP with our advanced
+            calculator
           </p>
           <div className="flex justify-end">
             <Button asChild>
-              <Link href="/calculators/sip-swp">
-                Try Calculator
-              </Link>
+              <Link href="/calculators/sip-swp">Try Calculator</Link>
             </Button>
           </div>
         </div>
@@ -35,28 +34,27 @@ export default function CalculatorsPage(): JSX.Element {
           <Coins className="w-12 h-12 mb-4" />
           <h2 className="text-lg font-semibold mb-2">Zakat Calculator</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Calculate your annual Zakat obligation with our easy-to-use calculator
+            Calculate your annual Zakat obligation with our easy-to-use
+            calculator
           </p>
           <div className="flex justify-end">
             <Button asChild>
-              <Link href="/calculators/zakat">
-                Try Calculator
-              </Link>
+              <Link href="/calculators/zakat">Try Calculator</Link>
             </Button>
           </div>
         </div>
 
         <div className="relative p-6 border rounded-lg hover:border-primary transition-colors">
           <Calculator className="w-12 h-12 mb-4" />
-          <h2 className="text-lg font-semibold mb-2">Share Averaging Calculator</h2>
+          <h2 className="text-lg font-semibold mb-2">
+            Share Averaging Calculator
+          </h2>
           <p className="text-sm text-muted-foreground mb-4">
             Calculate how many shares to buy to reach your target average price.
           </p>
           <div className="flex justify-end">
             <Button asChild>
-              <Link href="/calculators/share-averaging">
-                Try Calculator
-              </Link>
+              <Link href="/calculators/share-averaging">Try Calculator</Link>
             </Button>
           </div>
         </div>
@@ -64,4 +62,4 @@ export default function CalculatorsPage(): JSX.Element {
       </div>
     </div>
   );
-} 
+}

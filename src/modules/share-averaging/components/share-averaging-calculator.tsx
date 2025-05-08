@@ -1,13 +1,25 @@
 'use client';
 
+import type { FC } from 'react';
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
+import * as z from 'zod';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import * as z from 'zod';
-import type { FC } from 'react';
+import { CurrencySelector } from '@/modules/sip-swp/components/steps/currency-selector';
+import { SupportedCurrency } from '@/modules/sip-swp/lib/types';
+
+const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
+  PKR: '₨',
+  USD: '$',
+  INR: '₹',
+  EUR: '€',
+  GBP: '£',
+};
 
 const formSchema = z.object({
+  currency: z.enum(['PKR', 'USD', 'INR', 'EUR', 'GBP'] as const),
   currentInvestment: z.coerce.number().min(0, 'Required'),
   currentShares: z.coerce.number().min(1, 'Required'),
   currentPrice: z.coerce.number().min(0.01, 'Required'),
@@ -19,6 +31,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const ShareAveragingCalculator: FC = () => {
   const methods = useForm<FormValues>({
     defaultValues: {
+      currency: 'PKR',
       currentInvestment: 0,
       currentShares: 0,
       currentPrice: 0,
@@ -28,6 +41,7 @@ export const ShareAveragingCalculator: FC = () => {
   });
 
   const values = useWatch({ control: methods.control });
+  const currency = values?.currency || 'PKR';
   let error = '';
   let result: null | {
     newShares: number;
@@ -40,6 +54,10 @@ export const ShareAveragingCalculator: FC = () => {
     values || {};
 
   if (
+    typeof currentInvestment === 'number' &&
+    typeof currentShares === 'number' &&
+    typeof currentPrice === 'number' &&
+    typeof targetAvg === 'number' &&
     currentInvestment > 0 &&
     currentShares > 0 &&
     currentPrice > 0 &&
@@ -69,10 +87,15 @@ export const ShareAveragingCalculator: FC = () => {
           <CardTitle>Share Averaging Calculator</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-6">
+            <CurrencySelector
+              onSelect={(c) => methods.setValue('currency', c)}
+            />
+          </div>
           <form className="space-y-4">
             <div>
               <Label htmlFor="currentInvestment">
-                Current Total Investment (PKR)
+                Current Total Investment ({CURRENCY_SYMBOLS[currency]})
               </Label>
               <Input
                 id="currentInvestment"
@@ -82,7 +105,7 @@ export const ShareAveragingCalculator: FC = () => {
                   valueAsNumber: true,
                 })}
                 min={0}
-                placeholder="e.g. 100000"
+                placeholder={`e.g. 100000`}
               />
             </div>
             <div>
@@ -97,25 +120,29 @@ export const ShareAveragingCalculator: FC = () => {
               />
             </div>
             <div>
-              <Label htmlFor="currentPrice">Today's Market Price (PKR)</Label>
+              <Label htmlFor="currentPrice">
+                Today&apos;s Market Price ({CURRENCY_SYMBOLS[currency]})
+              </Label>
               <Input
                 id="currentPrice"
                 type="number"
                 step="any"
                 {...methods.register('currentPrice', { valueAsNumber: true })}
                 min={0.01}
-                placeholder="e.g. 120"
+                placeholder={`e.g. 120`}
               />
             </div>
             <div>
-              <Label htmlFor="targetAvg">Target Average Price (PKR)</Label>
+              <Label htmlFor="targetAvg">
+                Target Average Price ({CURRENCY_SYMBOLS[currency]})
+              </Label>
               <Input
                 id="targetAvg"
                 type="number"
                 step="any"
                 {...methods.register('targetAvg', { valueAsNumber: true })}
                 min={0.01}
-                placeholder="e.g. 110"
+                placeholder={`e.g. 110`}
               />
             </div>
           </form>
@@ -125,15 +152,16 @@ export const ShareAveragingCalculator: FC = () => {
               <div className="space-y-2">
                 <div>
                   <strong>You should buy:</strong> {Math.ceil(result.newShares)}{' '}
-                  shares at PKR {Number(currentPrice).toFixed(2)}
+                  shares at {CURRENCY_SYMBOLS[currency]}{' '}
+                  {Number(currentPrice).toFixed(2)}
                 </div>
                 <div>
-                  <strong>Additional investment:</strong> PKR{' '}
-                  {result.newInvestment.toFixed(2)}
+                  <strong>Additional investment:</strong>{' '}
+                  {CURRENCY_SYMBOLS[currency]} {result.newInvestment.toFixed(2)}
                 </div>
                 <div>
-                  <strong>New average price:</strong> PKR{' '}
-                  {result.newAverage.toFixed(2)}
+                  <strong>New average price:</strong>{' '}
+                  {CURRENCY_SYMBOLS[currency]} {result.newAverage.toFixed(2)}
                 </div>
               </div>
             )}
