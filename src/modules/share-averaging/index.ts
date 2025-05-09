@@ -1,0 +1,1 @@
+export { ShareAveragingCalculator } from './components/share-averaging-calculator'; 
