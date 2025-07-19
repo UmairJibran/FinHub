@@ -21,11 +21,18 @@ VITE_SUPABASE_URL=your_project_url_here
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 ```
 
-### 3. Set Up the Database Schema
+### 3.1. Set Up the Database Schema
 
 1. In your Supabase dashboard, go to the SQL Editor
 2. Copy the contents of `schema.sql` and run it in the SQL Editor
 3. This will create all the necessary tables, indexes, and Row Level Security policies
+
+### 3.2. Syncing via SupabaseCLI
+
+1. Install supabase cli `brew install supabase/tap/supabase`
+2. Login using `supabase login`
+3. In the root of this project `supabase link --project-ref ref`
+4. Push the db from migration file `supabase push`
 
 ### 4. Configure Authentication
 
