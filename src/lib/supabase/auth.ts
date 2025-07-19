@@ -1,4 +1,4 @@
-import { supabase } from './client';
+import { supabase, isSupabaseAvailable } from './client';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 import type { UserProfile } from './types';
 
@@ -27,6 +27,14 @@ export class AuthService {
    * Sign in with email and password
    */
   static async signInWithPassword(credentials: SignInCredentials): Promise<AuthResult> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        user: null,
+        session: null,
+        error: { message: 'Supabase is not configured' } as AuthError,
+      };
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
@@ -43,6 +51,14 @@ export class AuthService {
    * Sign up with email and password
    */
   static async signUp(credentials: SignUpCredentials): Promise<AuthResult> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        user: null,
+        session: null,
+        error: { message: 'Supabase is not configured' } as AuthError,
+      };
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email: credentials.email,
       password: credentials.password,
@@ -64,6 +80,10 @@ export class AuthService {
    * Sign in with Google OAuth
    */
   static async signInWithGoogle(): Promise<{ error: AuthError | null }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return { error: { message: 'Supabase is not configured' } as AuthError };
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -78,6 +98,10 @@ export class AuthService {
    * Sign out current user
    */
   static async signOut(): Promise<{ error: AuthError | null }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return { error: null }; // No error for sign out when not configured
+    }
+
     const { error } = await supabase.auth.signOut();
     return { error };
   }
@@ -86,6 +110,13 @@ export class AuthService {
    * Get current session
    */
   static async getSession(): Promise<{ session: Session | null; error: AuthError | null }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        session: null,
+        error: null,
+      };
+    }
+
     const { data, error } = await supabase.auth.getSession();
     return {
       session: data.session,
@@ -97,6 +128,13 @@ export class AuthService {
    * Get current user
    */
   static async getUser(): Promise<{ user: User | null; error: AuthError | null }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        user: null,
+        error: null,
+      };
+    }
+
     const { data, error } = await supabase.auth.getUser();
     return {
       user: data.user,

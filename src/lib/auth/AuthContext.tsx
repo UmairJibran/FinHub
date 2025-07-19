@@ -6,7 +6,7 @@ import {
   ReactNode,
 } from 'react';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { supabase } from '../supabase/client';
+import { supabase, isSupabaseAvailable } from '../supabase/client';
 import { AuthService, UserProfileService } from '../supabase/auth';
 import type {
   UserProfile,
@@ -56,6 +56,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     async function initializeAuth() {
       try {
+        // Check if Supabase is available
+        if (!isSupabaseAvailable || !supabase) {
+          if (mounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
         // Get initial session
         const { session: initialSession } = await AuthService.getSession();
 
@@ -79,32 +87,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     initializeAuth();
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        if (!mounted) return;
+    // Listen for auth changes only if Supabase is available
+    if (isSupabaseAvailable && supabase) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(
+        async (event: AuthChangeEvent, session: Session | null) => {
+          if (!mounted) return;
 
-        console.log('Auth state changed:', event, session?.user?.id);
+          console.log('Auth state changed:', event, session?.user?.id);
 
-        setSession(session);
-        setUser(session?.user || null);
+          setSession(session);
+          setUser(session?.user || null);
 
-        if (session?.user) {
-          // Load or create user profile
-          await loadUserProfile(session.user.id);
-        } else {
-          setProfile(null);
+          if (session?.user) {
+            // Load or create user profile
+            await loadUserProfile(session.user.id);
+          } else {
+            setProfile(null);
+          }
+
+          setLoading(false);
         }
+      );
 
-        setLoading(false);
-      }
-    );
+      return () => {
+        mounted = false;
+        subscription.unsubscribe();
+      };
+    }
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
