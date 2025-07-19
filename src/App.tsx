@@ -32,8 +32,14 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/calculators" element={<CalculatorsPage />} />
             <Route path="/calculators/sip-swp" element={<SIPSWPPage />} />
-            <Route path="/calculators/zakat" element={<ZakatCalculatorPage />} />
-            <Route path="/calculators/share-averaging" element={<ShareAveragingPage />} />
+            <Route
+              path="/calculators/zakat"
+              element={<ZakatCalculatorPage />}
+            />
+            <Route
+              path="/calculators/share-averaging"
+              element={<ShareAveragingPage />}
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<Callback />} />
             <Route path="/dashboard" element={<Dashboard />} />

@@ -1,44 +1,83 @@
 # FinHub
 
-A comprehensive financial planning platform built with Next.js, designed to empower users with tools and insights for making informed financial decisions.
+A comprehensive financial planning platform built with Vite and React, designed to empower users with tools and insights for making informed financial decisions.
 
 ## Overview
 
-FinHub provides interactive financial calculators, educational resources, and planning tools to help users:
+FinHub provides interactive financial calculators, portfolio tracking, and planning tools to help users:
+
 - Plan their investments and withdrawals
+- Track portfolio performance across multiple asset classes
 - Understand complex financial concepts
 - Make data-driven financial decisions
 - Visualize their financial journey
 
 ## Features
 
-### Calculators
+### Financial Calculators
+
 - **SIP to SWP Calculator**
+
   - Calculate optimal transition from investment to withdrawal phase
   - Interactive charts for visualization
   - Customizable parameters (investment amount, duration, expected returns)
   - Detailed breakdown of results
 
-### Coming Soon
-- **Investment Calculators**
-  - Goal-based Investment Planning
-  - Tax-saving Investment Tools
-- **Blog Section** with financial insights and tips
-- **Educational Resources** for financial literacy
+- **Zakat Calculator**
+
+  - Calculate annual Zakat obligations
+  - Easy-to-use interface for Islamic finance compliance
+  - Comprehensive asset and liability tracking
+
+- **Share Averaging Calculator**
+  - Calculate optimal share purchases to reach target average price
+  - Investment strategy optimization
+
+### Portfolio Tracker (In Development)
+
+- **Multi-Asset Portfolio Management**
+
+  - Track stocks, mutual funds, bonds, and alternative investments
+  - Real-time portfolio valuation and performance metrics
+  - Asset allocation visualization and rebalancing suggestions
+
+- **Investment Analytics**
+
+  - Performance tracking with detailed charts and metrics
+  - Risk analysis and diversification insights
+  - Goal-based investment tracking
+
+- **Secure Authentication**
+  - OAuth integration with Google and GitHub
+  - Secure data storage with Supabase backend
 
 ## Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 14 with App Router
-- **Styling**: 
+
+- **Framework**: Vite + React 18 with TypeScript
+- **Routing**: React Router DOM for client-side navigation
+- **Styling**:
   - Tailwind CSS for utility-first styling
   - Shadcn/UI for consistent, accessible components
-- **Data Visualization**: Nivo charts for interactive financial graphs
-- **State Management**: React Context API
+- **Data Visualization**:
+  - Recharts for portfolio performance charts
+  - Nivo charts for advanced financial visualizations
+- **State Management**:
+  - TanStack Query for server state management
+  - React Context API for client state
+
+### Backend & Database
+
+- **Backend**: Supabase (PostgreSQL + Auth + Real-time)
+- **Authentication**: Supabase Auth with OAuth providers
+- **Database**: PostgreSQL with Row Level Security (RLS)
 
 ### Development Tools
+
 - **Language**: TypeScript for type safety
-- **Form Handling**: 
+- **Build Tool**: Vite for fast development and optimized builds
+- **Form Handling**:
   - React Hook Form for form management
   - Zod for schema validation
 - **Code Quality**:
@@ -49,21 +88,58 @@ FinHub provides interactive financial calculators, educational resources, and pl
 ## Getting Started
 
 1. Clone the repository
+
 ```bash
 git clone https://github.com/UmairJibran/FinHub.git
+cd FinHub
 ```
 
 2. Install dependencies
+
 ```bash
 npm install
 ```
 
-3. Start the development server
+3. Set up environment variables
+
+```bash
+cp .env.example .env.local
+# Add your Supabase credentials and other environment variables
+```
+
+4. Start the development server
+
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build locally
+- `npm run lint` - Run ESLint
+
+## Project Structure
+
+```
+src/
+├── app/                    # Main app pages (converted from Next.js)
+├── components/             # Reusable UI components
+│   ├── layout/            # Layout components (Header, Footer)
+│   └── ui/                # Shadcn/UI components
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utility functions and configurations
+│   └── supabase/         # Supabase client configuration
+├── modules/               # Feature-specific modules
+│   ├── portfolio-tracker/ # Portfolio tracking functionality
+│   ├── sip-swp/          # SIP-SWP calculator
+│   ├── zakat/            # Zakat calculator
+│   └── share-averaging/   # Share averaging calculator
+└── pages/                 # Additional pages (Auth, Dashboard, etc.)
+```
 
 ## Contributing
 
@@ -83,4 +159,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Umair Jibran - [@umairjibran7](https://twitter.com/umairjibran7)
 
-Project Link: [https://github.com/UmairJibran/FinHub](https://github.com/UmairJibran/FinHub) 
+Project Link: [https://github.com/UmairJibran/FinHub](https://github.com/UmairJibran/FinHub)
