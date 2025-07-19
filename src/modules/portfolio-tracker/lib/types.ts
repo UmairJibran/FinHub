@@ -177,42 +177,17 @@ export interface AssetAllocation {
 }
 
 // ============================================================================
-// API TYPES
+// API TYPES (Basic types - detailed API types are in api-types.ts)
 // ============================================================================
 
 /**
- * Generic API response wrapper
+ * Basic API response wrapper for simple use cases
  */
-export interface ApiResponse<T = any> {
+export interface SimpleApiResponse<T = any> {
   data?: T;
-  error?: ApiError;
+  error?: string;
   success: boolean;
   message?: string;
-}
-
-/**
- * API error structure
- */
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: Record<string, any>;
-  field?: string;
-}
-
-/**
- * Paginated response structure
- */
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    total_pages: number;
-    has_next: boolean;
-    has_prev: boolean;
-  };
 }
 
 /**

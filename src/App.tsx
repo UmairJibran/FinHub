@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SafeAuthProvider } from './lib/auth/SafeAuthProvider';
 import RootLayout from './app/layout';
 import HomePage from './app/page';
 import CalculatorsPage from './app/calculators/page';
@@ -26,27 +27,29 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <RootLayout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/calculators" element={<CalculatorsPage />} />
-            <Route path="/calculators/sip-swp" element={<SIPSWPPage />} />
-            <Route
-              path="/calculators/zakat"
-              element={<ZakatCalculatorPage />}
-            />
-            <Route
-              path="/calculators/share-averaging"
-              element={<ShareAveragingPage />}
-            />
-            <Route path="/login" element={<Login />} />
-            <Route path="/auth/callback" element={<Callback />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/portfolios" element={<Portfolios />} />
-          </Routes>
-        </RootLayout>
-      </Router>
+      <SafeAuthProvider>
+        <Router>
+          <RootLayout>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/calculators" element={<CalculatorsPage />} />
+              <Route path="/calculators/sip-swp" element={<SIPSWPPage />} />
+              <Route
+                path="/calculators/zakat"
+                element={<ZakatCalculatorPage />}
+              />
+              <Route
+                path="/calculators/share-averaging"
+                element={<ShareAveragingPage />}
+              />
+              <Route path="/login" element={<Login />} />
+              <Route path="/auth/callback" element={<Callback />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/portfolios" element={<Portfolios />} />
+            </Routes>
+          </RootLayout>
+        </Router>
+      </SafeAuthProvider>
     </QueryClientProvider>
   );
 }
