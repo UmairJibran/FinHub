@@ -1,2 +1,2 @@
 // Portfolio tracker hooks index
-export {};
+export * from './usePortfolios';

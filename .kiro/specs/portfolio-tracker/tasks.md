@@ -58,6 +58,7 @@
   - Build portfolio list page displaying all user portfolios
   - Create portfolio form component for creating and editing portfolios
   - Add portfolio deletion with confirmation dialog
+  - All the components should support dark/light mode
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.6, 2.7_
 
 - [ ] 8. Build position management system

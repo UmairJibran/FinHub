@@ -1,2 +1,4 @@
 // Portfolio tracker components index
-export {};
+export * from './PortfolioCard';
+export * from './PortfolioForm';
+export * from './DeletePortfolioDialog';
