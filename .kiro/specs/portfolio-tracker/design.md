@@ -7,6 +7,7 @@ The Portfolio Tracker is a Vite-powered React application built with TypeScript,
 ## Architecture
 
 ### Technology Stack
+
 - **Frontend**: Vite + React 18+, TypeScript, Tailwind CSS
 - **Routing**: React Router v6 for client-side routing
 - **Backend**: Supabase (PostgreSQL database, Authentication, Real-time subscriptions)
@@ -15,6 +16,7 @@ The Portfolio Tracker is a Vite-powered React application built with TypeScript,
 - **State Management**: React hooks with TanStack Query for server state management
 
 ### Application Structure
+
 ```
 src/
 ├── pages/
@@ -49,23 +51,27 @@ src/
 ## Components and Interfaces
 
 ### Authentication Components
+
 - **LoginForm**: Handles email/password and Google OAuth login
 - **AuthProvider**: Context provider for authentication state
 - **ProtectedRoute**: HOC for route protection
 
 ### Portfolio Management Components
+
 - **PortfolioList**: Displays all user portfolios with summary cards
 - **PortfolioForm**: Create/edit portfolio accounts
 - **PortfolioCard**: Individual portfolio summary display
 - **AssetTypeSelector**: Dropdown for selecting asset types
 
 ### Position Management Components
+
 - **PositionList**: Displays positions within a portfolio
 - **PositionForm**: Add/edit individual positions
 - **PositionCard**: Individual position display with metrics
 - **CostBasisCalculator**: Handles average cost calculations
 
 ### Dashboard Components
+
 - **DashboardOverview**: Main dashboard with key metrics
 - **AllocationChart**: Pie/donut chart for asset allocation
 - **PerformanceChart**: Line chart for portfolio performance over time
@@ -73,6 +79,7 @@ src/
 - **PortfolioSummaryCards**: Grid of portfolio summary cards
 
 ### Core Interfaces
+
 ```typescript
 interface User {
   id: string;
@@ -119,7 +126,7 @@ enum AssetType {
   CRYPTO = 'crypto',
   MUTUAL_FUNDS = 'mutual_funds',
   COMMODITIES = 'commodities',
-  REAL_ESTATE = 'real_estate'
+  REAL_ESTATE = 'real_estate',
 }
 ```
 
@@ -128,6 +135,7 @@ enum AssetType {
 ### Database Schema
 
 #### Users Table (managed by Supabase Auth)
+
 ```sql
 -- Extended user profile
 CREATE TABLE user_profiles (
@@ -141,6 +149,7 @@ CREATE TABLE user_profiles (
 ```
 
 #### Portfolios Table
+
 ```sql
 CREATE TABLE portfolios (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -154,6 +163,7 @@ CREATE TABLE portfolios (
 ```
 
 #### Positions Table
+
 ```sql
 CREATE TABLE positions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -170,6 +180,7 @@ CREATE TABLE positions (
 ```
 
 #### Transactions Table
+
 ```sql
 CREATE TABLE transactions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -183,6 +194,7 @@ CREATE TABLE transactions (
 ```
 
 ### Row Level Security (RLS) Policies
+
 ```sql
 -- Enable RLS on all tables
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
@@ -200,8 +212,8 @@ CREATE POLICY "Users can manage own positions" ON positions FOR ALL USING (
 );
 CREATE POLICY "Users can manage own transactions" ON transactions FOR ALL USING (
   auth.uid() IN (
-    SELECT p.user_id FROM portfolios p 
-    JOIN positions pos ON p.id = pos.portfolio_id 
+    SELECT p.user_id FROM portfolios p
+    JOIN positions pos ON p.id = pos.portfolio_id
     WHERE pos.id = position_id
   )
 );
@@ -210,25 +222,31 @@ CREATE POLICY "Users can manage own transactions" ON transactions FOR ALL USING 
 ## Error Handling
 
 ### Client-Side Error Handling
+
 - **Form Validation**: Real-time validation with clear error messages
 - **API Error Handling**: Centralized error handling with user-friendly messages
 - **Network Errors**: Retry mechanisms and offline state handling
 - **Authentication Errors**: Automatic redirect to login on auth failures
 
 ### Server-Side Error Handling
+
 - **Database Constraints**: Proper constraint violations with meaningful messages
 - **RLS Violations**: Secure error messages that don't leak data
 - **Input Validation**: Server-side validation for all user inputs
 - **Transaction Rollbacks**: Atomic operations for data consistency
 
 ### Error Boundaries
+
 ```typescript
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
 }
 
-class PortfolioErrorBoundary extends Component<PropsWithChildren, ErrorBoundaryState> {
+class PortfolioErrorBoundary extends Component<
+  PropsWithChildren,
+  ErrorBoundaryState
+> {
   // Error boundary implementation for portfolio-specific errors
 }
 ```
@@ -236,24 +254,28 @@ class PortfolioErrorBoundary extends Component<PropsWithChildren, ErrorBoundaryS
 ## Testing Strategy
 
 ### Unit Testing
+
 - **Components**: React Testing Library for component behavior
 - **Hooks**: Custom hooks testing with renderHook
 - **Utilities**: Pure function testing for calculations
 - **Validation**: Schema validation testing
 
 ### Integration Testing
+
 - **API Routes**: Test API endpoints with mock database
 - **Authentication Flow**: Test login/logout flows
 - **Database Operations**: Test CRUD operations with test database
 - **Cost Basis Calculations**: Test complex averaging calculations
 
 ### End-to-End Testing
+
 - **User Journeys**: Complete user flows from login to portfolio management
 - **Cross-browser Testing**: Ensure compatibility across browsers
 - **Mobile Responsiveness**: Test on various device sizes
 - **Performance Testing**: Load testing for dashboard with multiple portfolios
 
 ### Test Data Management
+
 ```typescript
 // Test utilities for creating mock data
 interface TestPortfolio {
@@ -272,18 +294,21 @@ interface TestPosition {
 ## Security Considerations
 
 ### Authentication Security
+
 - **OAuth Implementation**: Secure Google OAuth flow with PKCE
 - **Session Management**: Secure session handling with httpOnly cookies
 - **Password Security**: Supabase handles password hashing and validation
 - **Multi-factor Authentication**: Future enhancement for additional security
 
 ### Data Security
+
 - **Row Level Security**: Comprehensive RLS policies for data isolation
 - **Input Sanitization**: All user inputs sanitized and validated
 - **SQL Injection Prevention**: Parameterized queries through Supabase client
 - **XSS Prevention**: Proper output encoding and CSP headers
 
 ### API Security
+
 - **Rate Limiting**: Implement rate limiting for API endpoints
 - **CORS Configuration**: Proper CORS setup for production
 - **API Key Management**: Secure handling of Supabase keys
@@ -292,18 +317,21 @@ interface TestPosition {
 ## Performance Optimizations
 
 ### Frontend Performance
+
 - **Code Splitting**: Route-based code splitting with React.lazy and Vite
 - **Asset Optimization**: Vite's built-in asset optimization and tree-shaking
 - **Caching**: TanStack Query for intelligent server state caching
 - **Bundle Analysis**: Vite bundle analyzer for monitoring bundle size
 
 ### Database Performance
+
 - **Indexing**: Proper indexes on frequently queried columns
 - **Query Optimization**: Efficient queries with proper joins
 - **Connection Pooling**: Supabase handles connection pooling
 - **Real-time Subscriptions**: Efficient real-time updates for live data
 
 ### Caching Strategy
+
 ```typescript
 // Client-side caching with TanStack Query
 const usePortfolios = () => {
@@ -313,7 +341,7 @@ const usePortfolios = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true
+    refetchOnReconnect: true,
   });
 };
 ```
@@ -321,17 +349,33 @@ const usePortfolios = () => {
 ## Responsive Design
 
 ### Breakpoint Strategy
+
 - **Mobile**: 320px - 768px (single column layout)
 - **Tablet**: 768px - 1024px (two column layout)
 - **Desktop**: 1024px+ (multi-column dashboard layout)
 
 ### Component Responsiveness
+
 - **Navigation**: Collapsible sidebar on mobile, persistent on desktop
 - **Charts**: Responsive charts that adapt to container size
 - **Tables**: Horizontal scroll on mobile, full display on desktop
 - **Forms**: Stack form fields on mobile, side-by-side on desktop
 
 ### Touch Interactions
+
 - **Touch Targets**: Minimum 44px touch targets for mobile
 - **Gestures**: Swipe gestures for navigation where appropriate
 - **Haptic Feedback**: Subtle feedback for user actions on mobile devices
+
+### Design ideology
+
+- Single-column, vertical flow.
+- Prominent input (Textarea with placeholder).
+- Responses in soft Cards, no borders.
+- Use ShadCN components (or custom if truly needed).
+- No tooltips — use icon + label (e.g., 🔄 Regenerate).
+- Defaults: dark mode, system font, responsive.
+- Real-time feedback: spinner, typing dots, toasts.
+- Collapsible, auto-labeled history.
+- Tap-friendly, smooth (duration-200 ease-in-out).
+- Clarity > cleverness.

@@ -4,6 +4,9 @@ import { AuthProvider } from './lib/auth/AuthContext';
 import { SafeAuthProvider } from './lib/auth/SafeAuthProvider';
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
 import RootLayout from './app/layout';
+import './app/globals.css';
+
+// Import components directly (disable lazy loading for now)
 import HomePage from './app/page';
 import CalculatorsPage from './app/calculators/page';
 import SIPSWPPage from './app/calculators/sip-swp/page';
@@ -13,7 +16,6 @@ import Dashboard from './pages/Dashboard';
 import Portfolios from './pages/Portfolios';
 import Login from './pages/auth/Login';
 import Callback from './pages/auth/Callback';
-import './app/globals.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +43,9 @@ function isSupabaseConfigured(): boolean {
 }
 
 function App() {
-  const AuthProviderComponent = isSupabaseConfigured() ? AuthProvider : SafeAuthProvider;
+  const AuthProviderComponent = isSupabaseConfigured()
+    ? AuthProvider
+    : SafeAuthProvider;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -61,42 +65,42 @@ function App() {
                 path="/calculators/share-averaging"
                 element={<ShareAveragingPage />}
               />
-              
+
               {/* Auth routes - redirect if already authenticated */}
-              <Route 
-                path="/login" 
+              <Route
+                path="/login"
                 element={
                   <PublicRoute>
                     <Login />
                   </PublicRoute>
-                } 
+                }
               />
-              <Route 
-                path="/auth/login" 
+              <Route
+                path="/auth/login"
                 element={
                   <PublicRoute>
                     <Login />
                   </PublicRoute>
-                } 
+                }
               />
               <Route path="/auth/callback" element={<Callback />} />
-              
+
               {/* Protected routes - require authentication */}
-              <Route 
-                path="/dashboard" 
+              <Route
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/portfolios" 
+              <Route
+                path="/portfolios"
                 element={
                   <ProtectedRoute>
                     <Portfolios />
                   </ProtectedRoute>
-                } 
+                }
               />
             </Routes>
           </RootLayout>

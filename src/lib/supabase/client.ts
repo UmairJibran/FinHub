@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
-import { validateSupabaseConnection } from './config';
 
 // Safe Supabase client initialization
 function createSupabaseClient() {
@@ -8,10 +7,13 @@ function createSupabaseClient() {
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   // Check if Supabase is configured
-  if (!url || !anonKey || 
-      url.includes('your_supabase') || 
-      anonKey.includes('your_supabase') ||
-      !url.startsWith('https://')) {
+  if (
+    !url ||
+    !anonKey ||
+    url.includes('your_supabase') ||
+    anonKey.includes('your_supabase') ||
+    !url.startsWith('https://')
+  ) {
     console.warn('Supabase is not configured. Using mock client.');
     // Return a mock client that won't cause errors
     return null;

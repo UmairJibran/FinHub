@@ -1,6 +1,8 @@
-import { useContext } from 'react';
-import { useAuth as useFullAuth, AuthContextType as FullAuthContextType } from '../lib/auth/AuthContext';
-import { useSafeAuth, SafeAuthContextType } from '../lib/auth/SafeAuthProvider';
+import {
+  useAuth as useFullAuth,
+  AuthContextType as FullAuthContextType,
+} from '../lib/auth/AuthContext';
+import { useSafeAuth } from '../lib/auth/SafeAuthProvider';
 
 // Check if Supabase is configured
 function isSupabaseConfigured(): boolean {
@@ -24,7 +26,7 @@ export type AuthContextType = FullAuthContextType & {
 // Hook that automatically uses the correct auth provider
 export function useAuth(): AuthContextType {
   const configured = isSupabaseConfigured();
-  
+
   if (configured) {
     try {
       const fullAuth = useFullAuth();

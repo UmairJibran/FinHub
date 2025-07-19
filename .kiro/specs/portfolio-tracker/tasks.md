@@ -42,10 +42,11 @@
   - Add loading states and error messages for authentication flows
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-- [ ] 6. Create main application layout and routing
+- [x] 6. Create main application layout and routing
 
   - Implement main app layout with navigation and responsive design
   - Set up React Router configuration with protected routes
+    - The calculators (sip/swp, zakat, averager etc.) should stay public and accessible without needing to login
   - Create navigation components (header, sidebar, mobile menu)
   - Implement route-based code splitting with React.lazy
   - _Requirements: 6.1, 6.2_

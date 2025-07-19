@@ -26,7 +26,9 @@ export class AuthService {
   /**
    * Sign in with email and password
    */
-  static async signInWithPassword(credentials: SignInCredentials): Promise<AuthResult> {
+  static async signInWithPassword(
+    credentials: SignInCredentials
+  ): Promise<AuthResult> {
     if (!isSupabaseAvailable || !supabase) {
       return {
         user: null,
@@ -109,7 +111,10 @@ export class AuthService {
   /**
    * Get current session
    */
-  static async getSession(): Promise<{ session: Session | null; error: AuthError | null }> {
+  static async getSession(): Promise<{
+    session: Session | null;
+    error: AuthError | null;
+  }> {
     if (!isSupabaseAvailable || !supabase) {
       return {
         session: null,
@@ -127,7 +132,10 @@ export class AuthService {
   /**
    * Get current user
    */
-  static async getUser(): Promise<{ user: User | null; error: AuthError | null }> {
+  static async getUser(): Promise<{
+    user: User | null;
+    error: AuthError | null;
+  }> {
     if (!isSupabaseAvailable || !supabase) {
       return {
         user: null,
@@ -145,7 +153,14 @@ export class AuthService {
   /**
    * Reset password
    */
-  static async resetPassword(email: string): Promise<{ error: AuthError | null }> {
+  static async resetPassword(
+    email: string
+  ): Promise<{ error: AuthError | null }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        error: { message: 'Supabase is not configured' } as AuthError,
+      };
+    }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
@@ -156,7 +171,14 @@ export class AuthService {
   /**
    * Update password
    */
-  static async updatePassword(password: string): Promise<{ error: AuthError | null }> {
+  static async updatePassword(
+    password: string
+  ): Promise<{ error: AuthError | null }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        error: { message: 'Supabase is not configured' } as AuthError,
+      };
+    }
     const { error } = await supabase.auth.updateUser({
       password,
     });
@@ -167,7 +189,16 @@ export class AuthService {
   /**
    * Refresh session
    */
-  static async refreshSession(): Promise<{ session: Session | null; error: AuthError | null }> {
+  static async refreshSession(): Promise<{
+    session: Session | null;
+    error: AuthError | null;
+  }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        session: null,
+        error: { message: 'Supabase is not configured' } as AuthError,
+      };
+    }
     const { data, error } = await supabase.auth.refreshSession();
     return {
       session: data.session,
@@ -181,7 +212,15 @@ export class UserProfileService {
   /**
    * Get user profile
    */
-  static async getUserProfile(userId: string): Promise<{ profile: UserProfile | null; error: any }> {
+  static async getUserProfile(
+    userId: string
+  ): Promise<{ profile: UserProfile | null; error: any }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        profile: null,
+        error: { message: 'Supabase is not configured' } as AuthError,
+      };
+    }
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
@@ -203,6 +242,12 @@ export class UserProfileService {
     full_name?: string | null;
     avatar_url?: string | null;
   }): Promise<{ profile: UserProfile | null; error: any }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        profile: null,
+        error: { message: 'Supabase is not configured' } as AuthError,
+      };
+    }
     const { data, error } = await supabase
       .from('user_profiles')
       .upsert(profile, {
@@ -227,6 +272,12 @@ export class UserProfileService {
       avatar_url?: string | null;
     }
   ): Promise<{ profile: UserProfile | null; error: any }> {
+    if (!isSupabaseAvailable || !supabase) {
+      return {
+        profile: null,
+        error: { message: 'Supabase is not configured' } as AuthError,
+      };
+    }
     const { data, error } = await supabase
       .from('user_profiles')
       .update(updates)
@@ -260,7 +311,7 @@ export class SessionManager {
     session: Session | null;
   }> {
     const { session, error } = await AuthService.getSession();
-    
+
     if (error || !session) {
       return {
         isAuthenticated: false,
@@ -286,7 +337,16 @@ export class SessionManager {
   }> {
     // Wait for initial auth state
     return new Promise((resolve) => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isSupabaseAvailable || !supabase) {
+        return {
+          user: null,
+          session: null,
+          error: { message: 'Supabase is not configured' } as AuthError,
+        };
+      }
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
         subscription.unsubscribe();
         resolve({
           isAuthenticated: !!session,
