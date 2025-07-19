@@ -1,5 +1,5 @@
 import { ArrowLeft, Calculator, Coins } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 
@@ -8,7 +8,7 @@ export default function CalculatorsPage(): JSX.Element {
     <div className="container py-10">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/">
+          <Link to="/">
             <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
@@ -25,7 +25,7 @@ export default function CalculatorsPage(): JSX.Element {
           </p>
           <div className="flex justify-end">
             <Button asChild>
-              <Link href="/calculators/sip-swp">Try Calculator</Link>
+              <Link to="/calculators/sip-swp">Try Calculator</Link>
             </Button>
           </div>
         </div>
@@ -39,7 +39,7 @@ export default function CalculatorsPage(): JSX.Element {
           </p>
           <div className="flex justify-end">
             <Button asChild>
-              <Link href="/calculators/zakat">Try Calculator</Link>
+              <Link to="/calculators/zakat">Try Calculator</Link>
             </Button>
           </div>
         </div>
@@ -54,7 +54,7 @@ export default function CalculatorsPage(): JSX.Element {
           </p>
           <div className="flex justify-end">
             <Button asChild>
-              <Link href="/calculators/share-averaging">Try Calculator</Link>
+              <Link to="/calculators/share-averaging">Try Calculator</Link>
             </Button>
           </div>
         </div>

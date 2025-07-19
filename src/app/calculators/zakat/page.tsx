@@ -1,11 +1,4 @@
-import { Metadata } from "next";
-
 import { ZakatCalculator } from "@/modules/zakat/components/zakat-calculator";
-
-export const metadata: Metadata = {
-    title: "FinHub | Zakat Calculator",
-    description: "Calculate your annual Zakat obligation with our easy-to-use calculator.",
-}
 
 export default function ZakatCalculatorPage(): React.ReactNode {
     return (

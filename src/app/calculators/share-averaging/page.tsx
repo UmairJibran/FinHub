@@ -1,12 +1,4 @@
-import { Metadata } from 'next';
-
 import { ShareAveragingCalculator } from '@/modules/share-averaging';
-
-export const metadata: Metadata = {
-  title: 'FinHub | Share Averaging Calculator',
-  description:
-    'Calculate how many shares to buy to reach your target average price.',
-};
 
 export default function ShareAveragingPage(): JSX.Element {
   return (
