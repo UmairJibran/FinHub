@@ -15,10 +15,10 @@ interface AuthState {
   profile: UserProfile | null;
   isLoading: boolean;
   error: Error | null;
-  
+
   // Computed properties
   isAuthenticated: boolean;
-  
+
   // Actions
   initialize: () => Promise<void>;
   loadUserProfile: (userId: string) => Promise<void>;
@@ -41,47 +41,49 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   isLoading: true,
   error: null,
-  
+
   // Computed properties
   get isAuthenticated() {
     return !!get().session;
   },
-  
+
   // Initialize auth state
   initialize: async (): Promise<void> => {
     try {
       // Check if Supabase is available
       if (!isSupabaseAvailable || !supabase) {
-        set({ 
+        set({
           error: new Error('Supabase client not available'),
-          isLoading: false
+          isLoading: false,
         });
         return;
       }
-      
+
       // Get initial session
       const { session: initialSession } = await AuthService.getSession();
-      
+
       set({
         session: initialSession,
         user: initialSession?.user || null,
       });
-      
+
       // Load user profile if authenticated
       if (initialSession?.user) {
         await get().loadUserProfile(initialSession.user.id);
       }
-      
+
       // Set up auth state listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      const {
+        data: { subscription: _subscription },
+      } = supabase.auth.onAuthStateChange(
         async (event: AuthChangeEvent, session: Session | null) => {
           console.log('Auth state changed:', event, session?.user?.id);
-          
+
           set({
             session,
             user: session?.user || null,
           });
-          
+
           if (session?.user) {
             // Load or create user profile
             await get().loadUserProfile(session.user.id);
@@ -90,34 +92,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         }
       );
-      
-      // Set up cleanup function but don't return it
-      const cleanup = () => {
-        subscription.unsubscribe();
-      };
-      
+
       // We need to return void for the Promise<void> return type
       return;
     } catch (err) {
-      set({ 
-        error: err instanceof Error ? err : new Error('An unknown error occurred'),
+      set({
+        error:
+          err instanceof Error ? err : new Error('An unknown error occurred'),
       });
     } finally {
       set({ isLoading: false });
     }
   },
-  
+
   // Load user profile (internal method)
   loadUserProfile: async (userId: string) => {
     try {
       let { profile: existingProfile, error } =
         await UserProfileService.getUserProfile(userId);
-      
-      if (error && error.code !== 'PGRST116') { // Not found error
+
+      if (error && error.code !== 'PGRST116') {
+        // Not found error
         console.error('Error loading user profile:', error);
         return;
       }
-      
+
       // Create profile if it doesn't exist
       if (!existingProfile && get().user) {
         const user = get().user;
@@ -128,20 +127,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             full_name: user?.user_metadata?.full_name || null,
             avatar_url: user?.user_metadata?.avatar_url || null,
           });
-        
+
         if (createError) {
           console.error('Error creating user profile:', createError);
         } else {
           existingProfile = newProfile;
         }
       }
-      
+
       set({ profile: existingProfile });
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
     }
   },
-  
+
   // Sign in with email/password
   signIn: async (credentials: SignInCredentials) => {
     set({ isLoading: true, error: null });
@@ -152,7 +151,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
     }
   },
-  
+
   // Sign up with email/password
   signUp: async (credentials: SignUpCredentials) => {
     set({ isLoading: true, error: null });
@@ -163,7 +162,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
     }
   },
-  
+
   // Sign in with Google
   signInWithGoogle: async () => {
     set({ isLoading: true, error: null });
@@ -174,7 +173,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Don't set loading to false here as the redirect will happen
     }
   },
-  
+
   // Sign out
   signOut: async () => {
     set({ isLoading: true, error: null });
@@ -192,7 +191,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
     }
   },
-  
+
   // Refresh session
   refreshSession: async () => {
     try {
@@ -201,7 +200,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('Error refreshing session:', error);
     }
   },
-  
+
   // Update user profile
   updateProfile: async (updates: {
     full_name?: string;
@@ -211,23 +210,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!user) {
       return { error: new Error('No authenticated user') };
     }
-    
+
     try {
       const { profile: updatedProfile, error } =
         await UserProfileService.updateUserProfile(user.id, updates);
-      
+
       if (!error && updatedProfile) {
         set({ profile: updatedProfile });
       }
-      
+
       return { error };
     } catch (error) {
       return { error };
     }
   },
-  
+
   // Clear error
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
 }));
 
 // Initialize auth state when the store is first imported
