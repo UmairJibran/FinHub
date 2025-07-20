@@ -13,6 +13,7 @@ import ZakatCalculatorPage from './app/calculators/zakat/page';
 import ShareAveragingPage from './app/calculators/share-averaging/page';
 import Dashboard from './pages/Dashboard';
 import Portfolios from './pages/Portfolios';
+import PortfolioDetail from './pages/PortfolioDetail';
 // import PortfolioTest from './pages/PortfolioTest';
 import Login from './pages/auth/Login';
 import Callback from './pages/auth/Callback';
@@ -80,6 +81,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Portfolios />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/portfolios/:portfolioId"
+                element={
+                  <ProtectedRoute>
+                    <PortfolioDetail />
                   </ProtectedRoute>
                 }
               />

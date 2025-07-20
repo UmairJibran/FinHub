@@ -61,7 +61,7 @@
   - All the components should support dark/light mode
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.6, 2.7_
 
-- [ ] 8. Build position management system
+- [x] 8. Build position management system
 
   - Create position service functions for CRUD operations with cost basis calculations
   - Implement cost basis calculation utility functions

@@ -8,7 +8,7 @@ import {
   DollarSign,
   AlertCircle,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/app-layout';
@@ -27,6 +27,7 @@ import type {
 } from '@/modules/portfolio-tracker/lib/types';
 
 export default function Portfolios() {
+  const navigate = useNavigate();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPortfolio, setEditingPortfolio] =
     useState<PortfolioSummary | null>(null);
@@ -156,8 +157,8 @@ export default function Portfolios() {
   };
 
   const handleAddPosition = (portfolio: PortfolioSummary) => {
-    // TODO: Navigate to add position page
-    console.log('Add position to portfolio:', portfolio.id);
+    // Navigate to portfolio detail page where positions can be managed
+    navigate(`/portfolios/${portfolio.id}`);
   };
 
   // Show create form

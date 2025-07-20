@@ -117,3 +117,27 @@ export type {
   ExportRequest,
   ExportResponse
 } from './api-types';
+
+// Export cost basis calculator functions
+export {
+  calculateNewAverageCost,
+  calculateCostBasisAfterSale,
+  calculateCostBasisFromTransactions,
+  calculatePositionMetrics,
+  validatePositionUpdate,
+  calculatePositionUpdateImpact
+} from './cost-basis-calculator';
+
+// Export position service functions
+export {
+  fetchPositionsByPortfolio,
+  fetchPositionsWithMetrics,
+  fetchPositionById,
+  createPosition,
+  updatePosition,
+  deletePosition,
+  fetchTransactionsByPosition,
+  fetchRecentTransactions,
+  isSymbolExistsInPortfolio,
+  getPositionCount
+} from './position-service';

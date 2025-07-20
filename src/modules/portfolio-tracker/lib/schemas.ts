@@ -25,7 +25,7 @@ export const UserSchema = z.object({
   name: z.string().min(1, 'Name is required').optional(),
   avatar_url: z.string().url('Invalid avatar URL').optional(),
   created_at: z.string().datetime().optional(),
-  updated_at: z.string().datetime().optional()
+  updated_at: z.string().datetime().optional(),
 });
 
 /**
@@ -34,17 +34,19 @@ export const UserSchema = z.object({
 export const PortfolioSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string().uuid(),
-  name: z.string()
+  name: z
+    .string()
     .min(1, 'Portfolio name is required')
     .max(100, 'Portfolio name must be less than 100 characters')
     .trim(),
-  description: z.string()
+  description: z
+    .string()
     .max(500, 'Description must be less than 500 characters')
     .trim()
     .optional(),
   asset_type: AssetTypeSchema,
   created_at: z.string().datetime(),
-  updated_at: z.string().datetime()
+  updated_at: z.string().datetime(),
 });
 
 /**
@@ -53,34 +55,37 @@ export const PortfolioSchema = z.object({
 export const PositionSchema = z.object({
   id: z.string().uuid(),
   portfolio_id: z.string().uuid(),
-  symbol: z.string()
+  symbol: z
+    .string()
     .min(1, 'Symbol is required')
     .max(20, 'Symbol must be less than 20 characters')
     .trim()
     .toUpperCase(),
-  name: z.string()
+  name: z
+    .string()
     .min(1, 'Asset name is required')
     .max(200, 'Asset name must be less than 200 characters')
     .trim(),
-  quantity: z.number()
+  quantity: z
+    .number()
     .positive('Quantity must be positive')
-    .finite('Quantity must be a valid number')
-    .multipleOf(0.00000001, 'Quantity precision too high'),
-  average_cost: z.number()
+    .finite('Quantity must be a valid number'),
+  average_cost: z
+    .number()
     .positive('Average cost must be positive')
-    .finite('Average cost must be a valid number')
-    .multipleOf(0.00000001, 'Price precision too high'),
-  total_invested: z.number()
+    .finite('Average cost must be a valid number'),
+  total_invested: z
+    .number()
     .positive('Total invested must be positive')
     .finite('Total invested must be a valid number')
     .multipleOf(0.01, 'Amount precision too high'),
-  current_price: z.number()
+  current_price: z
+    .number()
     .positive('Current price must be positive')
     .finite('Current price must be a valid number')
-    .multipleOf(0.00000001, 'Price precision too high')
     .optional(),
   created_at: z.string().datetime(),
-  updated_at: z.string().datetime()
+  updated_at: z.string().datetime(),
 });
 
 /**
@@ -90,16 +95,16 @@ export const TransactionSchema = z.object({
   id: z.string().uuid(),
   position_id: z.string().uuid(),
   type: TransactionTypeSchema,
-  quantity: z.number()
+  quantity: z
+    .number()
     .positive('Quantity must be positive')
-    .finite('Quantity must be a valid number')
-    .multipleOf(0.00000001, 'Quantity precision too high'),
-  price: z.number()
+    .finite('Quantity must be a valid number'),
+  price: z
+    .number()
     .positive('Price must be positive')
-    .finite('Price must be a valid number')
-    .multipleOf(0.00000001, 'Price precision too high'),
+    .finite('Price must be a valid number'),
   transaction_date: z.string().datetime(),
-  created_at: z.string().datetime()
+  created_at: z.string().datetime(),
 });
 
 // ============================================================================
@@ -110,93 +115,106 @@ export const TransactionSchema = z.object({
  * Portfolio creation schema
  */
 export const CreatePortfolioSchema = z.object({
-  name: z.string()
+  name: z
+    .string()
     .min(1, 'Portfolio name is required')
     .max(100, 'Portfolio name must be less than 100 characters')
     .trim(),
-  description: z.string()
+  description: z
+    .string()
     .max(500, 'Description must be less than 500 characters')
     .trim()
     .optional()
     .or(z.literal('')),
-  asset_type: AssetTypeSchema
+  asset_type: AssetTypeSchema,
 });
 
 /**
  * Portfolio update schema
  */
-export const UpdatePortfolioSchema = z.object({
-  name: z.string()
-    .min(1, 'Portfolio name is required')
-    .max(100, 'Portfolio name must be less than 100 characters')
-    .trim()
-    .optional(),
-  description: z.string()
-    .max(500, 'Description must be less than 500 characters')
-    .trim()
-    .optional()
-    .or(z.literal(''))
-}).refine(data => Object.keys(data).length > 0, {
-  message: 'At least one field must be provided for update'
-});
+export const UpdatePortfolioSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, 'Portfolio name is required')
+      .max(100, 'Portfolio name must be less than 100 characters')
+      .trim()
+      .optional(),
+    description: z
+      .string()
+      .max(500, 'Description must be less than 500 characters')
+      .trim()
+      .optional()
+      .or(z.literal('')),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided for update',
+  });
 
 /**
  * Position creation schema with purchase price
  */
 export const CreatePositionSchema = z.object({
   portfolio_id: z.string().uuid('Invalid portfolio ID'),
-  symbol: z.string()
+  symbol: z
+    .string()
     .min(1, 'Symbol is required')
     .max(20, 'Symbol must be less than 20 characters')
     .trim()
     .toUpperCase(),
-  name: z.string()
+  name: z
+    .string()
     .min(1, 'Asset name is required')
     .max(200, 'Asset name must be less than 200 characters')
     .trim(),
-  quantity: z.number()
+  quantity: z
+    .number()
     .positive('Quantity must be positive')
-    .finite('Quantity must be a valid number')
-    .multipleOf(0.00000001, 'Quantity precision too high'),
-  purchase_price: z.number()
+    .finite('Quantity must be a valid number'),
+  purchase_price: z
+    .number()
     .positive('Purchase price must be positive')
-    .finite('Purchase price must be a valid number')
-    .multipleOf(0.00000001, 'Price precision too high'),
-  current_price: z.number()
+    .finite('Purchase price must be a valid number'),
+  current_price: z
+    .number()
     .positive('Current price must be positive')
     .finite('Current price must be a valid number')
-    .multipleOf(0.00000001, 'Price precision too high')
-    .optional()
+
+    .optional(),
 });
 
 /**
  * Position update schema
  */
-export const UpdatePositionSchema = z.object({
-  symbol: z.string()
-    .min(1, 'Symbol is required')
-    .max(20, 'Symbol must be less than 20 characters')
-    .trim()
-    .toUpperCase()
-    .optional(),
-  name: z.string()
-    .min(1, 'Asset name is required')
-    .max(200, 'Asset name must be less than 200 characters')
-    .trim()
-    .optional(),
-  quantity: z.number()
-    .positive('Quantity must be positive')
-    .finite('Quantity must be a valid number')
-    .multipleOf(0.00000001, 'Quantity precision too high')
-    .optional(),
-  purchase_price: z.number()
-    .positive('Purchase price must be positive')
-    .finite('Purchase price must be a valid number')
-    .multipleOf(0.00000001, 'Price precision too high')
-    .optional()
-}).refine(data => Object.keys(data).length > 0, {
-  message: 'At least one field must be provided for update'
-});
+export const UpdatePositionSchema = z
+  .object({
+    symbol: z
+      .string()
+      .min(1, 'Symbol is required')
+      .max(20, 'Symbol must be less than 20 characters')
+      .trim()
+      .toUpperCase()
+      .optional(),
+    name: z
+      .string()
+      .min(1, 'Asset name is required')
+      .max(200, 'Asset name must be less than 200 characters')
+      .trim()
+      .optional(),
+    quantity: z
+      .number()
+      .positive('Quantity must be positive')
+      .finite('Quantity must be a valid number')
+      .optional(),
+    purchase_price: z
+      .number()
+      .positive('Purchase price must be positive')
+      .finite('Purchase price must be a valid number')
+      .optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided for update',
+  });
 
 /**
  * Transaction creation schema
@@ -204,15 +222,15 @@ export const UpdatePositionSchema = z.object({
 export const CreateTransactionSchema = z.object({
   position_id: z.string().uuid('Invalid position ID'),
   type: TransactionTypeSchema,
-  quantity: z.number()
+  quantity: z
+    .number()
     .positive('Quantity must be positive')
-    .finite('Quantity must be a valid number')
-    .multipleOf(0.00000001, 'Quantity precision too high'),
-  price: z.number()
+    .finite('Quantity must be a valid number'),
+  price: z
+    .number()
     .positive('Price must be positive')
-    .finite('Price must be a valid number')
-    .multipleOf(0.00000001, 'Price precision too high'),
-  transaction_date: z.string().datetime('Invalid transaction date')
+    .finite('Price must be a valid number'),
+  transaction_date: z.string().datetime('Invalid transaction date'),
 });
 
 // ============================================================================
@@ -223,14 +241,16 @@ export const CreateTransactionSchema = z.object({
  * Login form validation schema
  */
 export const LoginFormSchema = z.object({
-  email: z.string()
+  email: z
+    .string()
     .min(1, 'Email is required')
     .email('Invalid email address')
     .trim()
     .toLowerCase(),
-  password: z.string()
+  password: z
+    .string()
     .min(6, 'Password must be at least 6 characters')
-    .max(128, 'Password must be less than 128 characters')
+    .max(128, 'Password must be less than 128 characters'),
 });
 
 /**
@@ -261,7 +281,7 @@ export const QueryParamsSchema = z.object({
   sort_by: z.string().optional(),
   sort_order: z.enum(['asc', 'desc']).default('desc'),
   search: z.string().trim().optional(),
-  asset_type: AssetTypeSchema.optional()
+  asset_type: AssetTypeSchema.optional(),
 });
 
 // ============================================================================
@@ -274,20 +294,24 @@ export const QueryParamsSchema = z.object({
 export const ApiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
     data: dataSchema.optional(),
-    error: z.object({
-      code: z.string(),
-      message: z.string(),
-      details: z.record(z.any()).optional(),
-      field: z.string().optional()
-    }).optional(),
+    error: z
+      .object({
+        code: z.string(),
+        message: z.string(),
+        details: z.record(z.any()).optional(),
+        field: z.string().optional(),
+      })
+      .optional(),
     success: z.boolean(),
-    message: z.string().optional()
+    message: z.string().optional(),
   });
 
 /**
  * Paginated response schema
  */
-export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
+export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(
+  itemSchema: T
+) =>
   z.object({
     data: z.array(itemSchema),
     pagination: z.object({
@@ -296,8 +320,8 @@ export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =
       total: z.number().int().nonnegative(),
       total_pages: z.number().int().nonnegative(),
       has_next: z.boolean(),
-      has_prev: z.boolean()
-    })
+      has_prev: z.boolean(),
+    }),
   });
 
 // ============================================================================

@@ -39,12 +39,6 @@ export function Sidebar({ className }: SidebarProps) {
       description: "Manage your investment portfolios"
     },
     {
-      title: "Add Position",
-      href: "/portfolios/add-position",
-      icon: PlusCircle,
-      description: "Add new investment position"
-    },
-    {
       title: "Analytics",
       href: "/analytics",
       icon: TrendingUp,
