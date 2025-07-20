@@ -1,11 +1,8 @@
-import {
-  useAuth as useFullAuth,
-  AuthContextType as FullAuthContextType,
-} from '../lib/auth/AuthContext';
-import { useSafeAuth } from '../lib/auth/SafeAuthProvider';
+import { useAuthStore } from '../lib/auth/authStore';
+import { useEffect } from 'react';
 
 // Check if Supabase is configured
-function isSupabaseConfigured(): boolean {
+function checkSupabaseConfig(): boolean {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -18,35 +15,31 @@ function isSupabaseConfigured(): boolean {
   );
 }
 
-// Unified auth context type
-export type AuthContextType = FullAuthContextType & {
-  isSupabaseConfigured: boolean;
-};
-
-// Hook that automatically uses the correct auth provider
-export function useAuth(): AuthContextType {
-  const configured = isSupabaseConfigured();
-
-  if (configured) {
-    try {
-      const fullAuth = useFullAuth();
-      return {
-        ...fullAuth,
-        isSupabaseConfigured: true,
-      };
-    } catch (error) {
-      // Fallback to safe auth if full auth fails
-      const safeAuth = useSafeAuth();
-      return {
-        ...safeAuth,
-        isSupabaseConfigured: false,
-      };
+/**
+ * Custom hook to access authentication functionality using Zustand
+ */
+export function useAuth() {
+  const authStore = useAuthStore();
+  const isSupabaseConfigured = checkSupabaseConfig();
+  
+  // Initialize auth on first mount if Supabase is configured
+  useEffect(() => {
+    if (isSupabaseConfigured && authStore.isLoading && !authStore.user && !authStore.error) {
+      authStore.initialize();
     }
-  } else {
-    const safeAuth = useSafeAuth();
-    return {
-      ...safeAuth,
-      isSupabaseConfigured: false,
-    };
-  }
+  }, [isSupabaseConfigured]);
+  
+  return {
+    ...authStore,
+    isSupabaseConfigured,
+    // Add compatibility properties for components that expect the old context API
+    loading: authStore.isLoading
+  };
 }
+
+// Export types for convenience
+export type { 
+  SignInCredentials, 
+  SignUpCredentials, 
+  UserProfile 
+} from '../lib/auth/authStore';

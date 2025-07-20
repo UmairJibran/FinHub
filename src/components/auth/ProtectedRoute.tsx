@@ -27,16 +27,16 @@ export function ProtectedRoute({
   redirectTo = '/auth/login',
   requireAuth = true,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking auth state
-  if (loading) {
+  if (isLoading) {
     return <AuthLoadingSpinner />;
   }
 
   // If auth is required and user is not authenticated, redirect to login
-  if (requireAuth && !isAuthenticated) {
+  if (requireAuth && !user) {
     return (
       <Navigate to={redirectTo} state={{ from: location.pathname }} replace />
     );
@@ -62,16 +62,16 @@ export function PublicRoute({
   redirectTo = '/dashboard',
   redirectIfAuthenticated = true,
 }: PublicRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking auth state
-  if (loading) {
+  if (isLoading) {
     return <AuthLoadingSpinner />;
   }
 
   // If user is authenticated and we should redirect, go to dashboard
-  if (redirectIfAuthenticated && isAuthenticated) {
+  if (redirectIfAuthenticated && user) {
     // Check if there's a redirect location from the login attempt
     const from = (location.state as any)?.from || redirectTo;
     return <Navigate to={from} replace />;
@@ -96,15 +96,15 @@ export function AuthGuard({
   requireAuth = true,
   showLoading = true,
 }: AuthGuardProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   // Show loading spinner while checking auth state
-  if (loading && showLoading) {
+  if (isLoading && showLoading) {
     return <AuthLoadingSpinner />;
   }
 
   // Show children if auth requirement is met
-  if ((requireAuth && isAuthenticated) || (!requireAuth && !isAuthenticated)) {
+  if ((requireAuth && user) || (!requireAuth && !user)) {
     return <>{children}</>;
   }
 
@@ -116,12 +116,12 @@ export function AuthGuard({
  * Hook for programmatic navigation with auth checks
  */
 export function useAuthNavigation() {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   const requireAuth = (callback: () => void) => {
-    if (loading) return;
+    if (isLoading) return;
 
-    if (isAuthenticated) {
+    if (user) {
       callback();
     } else {
       // Could dispatch a login modal or redirect
@@ -131,8 +131,8 @@ export function useAuthNavigation() {
 
   return {
     requireAuth,
-    isAuthenticated,
-    loading,
+    isAuthenticated: !!user,
+    loading: isLoading,
   };
 }
 

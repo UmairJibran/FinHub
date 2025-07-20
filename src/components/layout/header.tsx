@@ -6,7 +6,8 @@ import { Button } from "../ui/button";
 
 export function Header(): JSX.Element {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { isAuthenticated, user, signOut } = useAuth();
+    const { user, signOut } = useAuth();
+    const isAuthenticated = !!user;
     const location = useLocation();
 
     const isActive = (path: string) => {

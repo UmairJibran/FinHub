@@ -20,13 +20,16 @@ function createSupabaseClient() {
   }
 
   try {
-    return createClient<Database>(url, anonKey, {
+    console.log('Creating Supabase client with URL:', url);
+    const client = createClient<Database>(url, anonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true,
       },
     });
+    console.log('Supabase client created successfully');
+    return client;
   } catch (error) {
     console.error('Failed to create Supabase client:', error);
     return null;

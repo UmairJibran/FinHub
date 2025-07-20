@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './lib/auth/AuthContext';
-import { SafeAuthProvider } from './lib/auth/SafeAuthProvider';
+// Zustand auth store is initialized automatically when imported
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
 import RootLayout from './app/layout';
 import './app/globals.css';
@@ -14,6 +13,7 @@ import ZakatCalculatorPage from './app/calculators/zakat/page';
 import ShareAveragingPage from './app/calculators/share-averaging/page';
 import Dashboard from './pages/Dashboard';
 import Portfolios from './pages/Portfolios';
+// import PortfolioTest from './pages/PortfolioTest';
 import Login from './pages/auth/Login';
 import Callback from './pages/auth/Callback';
 
@@ -28,28 +28,9 @@ const queryClient = new QueryClient({
   },
 });
 
-// Check if Supabase is configured
-function isSupabaseConfigured(): boolean {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-  return !!(
-    supabaseUrl &&
-    supabaseKey &&
-    !supabaseUrl.includes('your_supabase') &&
-    !supabaseKey.includes('your_supabase') &&
-    supabaseUrl.startsWith('https://')
-  );
-}
-
 function App() {
-  const AuthProviderComponent = isSupabaseConfigured()
-    ? AuthProvider
-    : SafeAuthProvider;
-
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProviderComponent>
         <Router>
           <RootLayout>
             <Routes>
@@ -105,7 +86,6 @@ function App() {
             </Routes>
           </RootLayout>
         </Router>
-      </AuthProviderComponent>
     </QueryClientProvider>
   );
 }

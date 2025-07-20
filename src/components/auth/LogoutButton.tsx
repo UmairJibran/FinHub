@@ -20,7 +20,8 @@ export function LogoutButton({
   children 
 }: LogoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { signOut, isAuthenticated, isSupabaseConfigured } = useAuth();
+  const { signOut, user, isSupabaseConfigured } = useAuth();
+  const isAuthenticated = !!user;
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -77,7 +78,8 @@ export function LogoutButton({
 // Hook for programmatic logout
 export function useLogout() {
   const [isLoading, setIsLoading] = useState(false);
-  const { signOut, isAuthenticated, isSupabaseConfigured } = useAuth();
+  const { signOut, user, isSupabaseConfigured } = useAuth();
+  const isAuthenticated = !!user;
   const navigate = useNavigate();
 
   const logout = async () => {

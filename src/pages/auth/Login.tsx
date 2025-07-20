@@ -6,20 +6,20 @@ import { useAuth } from '@/hooks/useAuth';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   // Get the intended destination from location state, default to dashboard
   const from = (location.state as any)?.from || '/dashboard';
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (!isLoading && user) {
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, loading, navigate, from]);
+  }, [user, isLoading, navigate, from]);
 
   // Show loading while checking auth state
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
@@ -28,7 +28,7 @@ export default function Login() {
   }
 
   // Don't render login form if already authenticated
-  if (isAuthenticated) {
+  if (user) {
     return null;
   }
 

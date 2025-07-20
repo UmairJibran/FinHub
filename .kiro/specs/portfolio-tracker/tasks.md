@@ -29,7 +29,7 @@
 
   - Create Supabase client configuration with proper TypeScript types
   - Implement authentication helper functions for login, logout, and session management
-  - Create auth context provider for global authentication state
+  - Create auth zustand provider for global authentication state
   - Implement protected route wrapper component
   - _Requirements: 1.1, 1.3, 1.5, 1.6, 7.3_
 
@@ -51,7 +51,7 @@
   - Implement route-based code splitting with React.lazy
   - _Requirements: 6.1, 6.2_
 
-- [ ] 7. Implement portfolio management core functionality
+- [x] 7. Implement portfolio management core functionality
 
   - Create portfolio service functions for CRUD operations
   - Implement custom hooks for portfolio data management with TanStack Query

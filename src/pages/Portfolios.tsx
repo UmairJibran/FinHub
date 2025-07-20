@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/app-layout';
+import { supabase, isSupabaseAvailable } from '@/lib/supabase/client';
 import {
   PortfolioCard,
   EmptyPortfolioCard,
@@ -19,12 +20,7 @@ import {
   PortfolioForm,
   DeletePortfolioDialog,
 } from '@/modules/portfolio-tracker/components';
-import {
-  usePortfolioManager,
-  useCreatePortfolio,
-  useUpdatePortfolio,
-  useDeletePortfolio,
-} from '@/modules/portfolio-tracker/hooks';
+import { usePortfolioManager } from '@/modules/portfolio-tracker/hooks';
 import type {
   PortfolioSummary,
   PortfolioFormData,
@@ -36,6 +32,7 @@ export default function Portfolios() {
     useState<PortfolioSummary | null>(null);
   const [deletingPortfolio, setDeletingPortfolio] =
     useState<PortfolioSummary | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Portfolio data and operations
   const {
@@ -48,11 +45,54 @@ export default function Portfolios() {
     isDeleting,
     createError,
     updateError,
+    createPortfolio,
+    updatePortfolio,
+    deletePortfolio,
+    refetchPortfolios,
+    refetchSummaries,
   } = usePortfolioManager();
 
-  const createMutation = useCreatePortfolio();
-  const updateMutation = useUpdatePortfolio();
-  const deleteMutation = useDeletePortfolio();
+  // Debug function to check Supabase connection
+  const checkConnection = async () => {
+    try {
+      setDebugInfo('Checking connection...');
+      if (!isSupabaseAvailable || !supabase) {
+        setDebugInfo('Supabase client not available');
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setDebugInfo('No authenticated user found');
+        return;
+      }
+
+      setDebugInfo(`User authenticated: ${user.id}`);
+
+      // Test database connection
+      const { data, error } = await supabase
+        .from('portfolios')
+        .select('*')
+        .limit(1);
+
+      if (error) {
+        setDebugInfo(`Database error: ${error.message}`);
+        return;
+      }
+
+      setDebugInfo(
+        `Connection successful. Found ${data?.length || 0} portfolios.`
+      );
+
+      // Force refresh
+      refetchPortfolios();
+      refetchSummaries();
+    } catch (error) {
+      setDebugInfo(`Error: ${error}`);
+    }
+  };
 
   // Calculate totals
   const totalPortfolioValue = portfolios.reduce(
@@ -77,10 +117,9 @@ export default function Portfolios() {
   // Event handlers
   const handleCreatePortfolio = async (data: PortfolioFormData) => {
     try {
-      await createMutation.mutateAsync(data);
+      await createPortfolio(data);
       setShowCreateForm(false);
     } catch (error) {
-      // Error is handled by the mutation
       console.error('Failed to create portfolio:', error);
     }
   };
@@ -89,23 +128,21 @@ export default function Portfolios() {
     if (!editingPortfolio) return;
 
     try {
-      await updateMutation.mutateAsync({
+      await updatePortfolio({
         id: editingPortfolio.id,
         input: data,
       });
       setEditingPortfolio(null);
     } catch (error) {
-      // Error is handled by the mutation
       console.error('Failed to update portfolio:', error);
     }
   };
 
   const handleDeletePortfolio = async (portfolioId: string) => {
     try {
-      await deleteMutation.mutateAsync(portfolioId);
+      await deletePortfolio(portfolioId);
       setDeletingPortfolio(null);
     } catch (error) {
-      // Error is handled by the mutation
       console.error('Failed to delete portfolio:', error);
     }
   };
@@ -179,7 +216,37 @@ export default function Portfolios() {
               {error.message ||
                 'An error occurred while loading your portfolios.'}
             </p>
-            <Button onClick={() => window.location.reload()}>Try Again</Button>
+            <div className="flex gap-4">
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  refetchPortfolios();
+                  refetchSummaries();
+                }}
+              >
+                Refresh Data
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Show create portfolio button even in error state */}
+        <Card className="mt-8 border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Plus className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Create New Portfolio</h3>
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              Start tracking your investments by creating a portfolio
+            </p>
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Portfolio
+            </Button>
           </CardContent>
         </Card>
       </DashboardLayout>
@@ -191,6 +258,38 @@ export default function Portfolios() {
       title="Investment Portfolios"
       description="Manage and track your investment portfolios"
     >
+      {/* Debug Info */}
+      {debugInfo && (
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center">
+              <div className="font-mono text-sm">{debugInfo}</div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDebugInfo('')}
+              >
+                Clear
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Debug Actions */}
+      <div className="flex gap-2 mb-4">
+        <Button onClick={checkConnection}>Check Connection</Button>
+        <Button onClick={() => setShowCreateForm(true)}>New Portfolio</Button>
+        <Button
+          onClick={() => {
+            refetchPortfolios();
+            refetchSummaries();
+          }}
+        >
+          Refresh Data
+        </Button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>

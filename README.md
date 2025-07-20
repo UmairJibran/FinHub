@@ -65,7 +65,7 @@ FinHub provides interactive financial calculators, portfolio tracking, and plann
   - Nivo charts for advanced financial visualizations
 - **State Management**:
   - TanStack Query for server state management
-  - React Context API for client state
+  - Zustand API for client state
 
 ### Backend & Database
 

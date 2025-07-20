@@ -3,16 +3,25 @@
  */
 
 import { supabase, isSupabaseAvailable } from '../../../lib/supabase/client';
-import type { 
-  Portfolio, 
+import type {
+  Portfolio,
   PortfolioSummary,
   CreatePortfolioInput,
-  UpdatePortfolioInput 
+  UpdatePortfolioInput,
 } from './types';
-import type { 
-  PortfolioInsert, 
-  PortfolioUpdate 
+import type {
+  PortfolioInsert,
+  PortfolioUpdate,
 } from '../../../lib/supabase/types';
+
+// Define a Position interface to avoid using 'any'
+interface Position {
+  id: string;
+  quantity: number;
+  average_cost: number;
+  total_invested: number;
+  current_price: number | null;
+}
 
 // ============================================================================
 // PORTFOLIO CRUD OPERATIONS
@@ -22,107 +31,156 @@ import type {
  * Fetch all portfolios for the authenticated user
  */
 export async function fetchPortfolios(): Promise<Portfolio[]> {
-  if (!isSupabaseAvailable || !supabase) {
-    throw new Error('Supabase is not configured');
+  try {
+    if (!isSupabaseAvailable || !supabase) {
+      console.error('Supabase client not available');
+      throw new Error('Supabase is not configured');
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      throw new Error('User not authenticated');
+    }
+
+    console.log('Fetching portfolios for user:', user.id);
+
+    const { data, error } = await supabase
+      .from('portfolios')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching portfolios:', error);
+      throw new Error(`Failed to fetch portfolios: ${error.message}`);
+    }
+
+    console.log('Fetched portfolios:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('Error in fetchPortfolios:', error);
+
+    // Return empty array instead of throwing to prevent UI from breaking
+    console.log('Returning empty portfolio array due to error');
+    return [];
   }
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-
-  const { data, error } = await supabase
-    .from('portfolios')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw new Error(`Failed to fetch portfolios: ${error.message}`);
-  }
-
-  return data || [];
 }
 
 /**
  * Fetch portfolio summaries with calculated metrics
  */
 export async function fetchPortfolioSummaries(): Promise<PortfolioSummary[]> {
-  if (!isSupabaseAvailable || !supabase) {
-    throw new Error('Supabase is not configured');
-  }
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-
-  // Fetch portfolios with position counts and totals
-  const { data, error } = await supabase
-    .from('portfolios')
-    .select(`
-      *,
-      positions (
-        id,
-        quantity,
-        average_cost,
-        total_invested,
-        current_price
-      )
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw new Error(`Failed to fetch portfolio summaries: ${error.message}`);
-  }
-
-  // Calculate summary metrics for each portfolio
-  const summaries: PortfolioSummary[] = (data || []).map(portfolio => {
-    const positions = portfolio.positions || [];
-    const total_positions = positions.length;
-    const total_invested = positions.reduce((sum, pos) => sum + pos.total_invested, 0);
-    
-    let current_value: number | undefined;
-    let unrealized_gain_loss: number | undefined;
-    let unrealized_gain_loss_percentage: number | undefined;
-
-    // Calculate current value if all positions have current prices
-    const hasAllCurrentPrices = positions.length > 0 && positions.every(pos => pos.current_price !== null);
-    if (hasAllCurrentPrices) {
-      current_value = positions.reduce((sum, pos) => {
-        return sum + (pos.quantity * (pos.current_price || 0));
-      }, 0);
-      
-      unrealized_gain_loss = current_value - total_invested;
-      unrealized_gain_loss_percentage = total_invested > 0 
-        ? (unrealized_gain_loss / total_invested) * 100 
-        : 0;
+  try {
+    if (!isSupabaseAvailable || !supabase) {
+      console.error('Supabase client not available');
+      throw new Error('Supabase is not configured');
     }
 
-    return {
-      ...portfolio,
-      positions: undefined, // Remove positions array from summary
-      total_positions,
-      total_invested,
-      current_value,
-      unrealized_gain_loss,
-      unrealized_gain_loss_percentage
-    };
-  });
+    console.log('Checking authentication status');
+    const authResponse = await supabase.auth.getUser();
 
-  return summaries;
+    const {
+      data: { user },
+    } = authResponse;
+    if (!user) {
+      console.error('No authenticated user found');
+      throw new Error('User not authenticated');
+    }
+
+    console.log('Fetching portfolios for user:', user.id);
+
+    // Fetch portfolios with position counts and totals
+    console.log('Executing main query');
+    const { data, error } = await supabase
+      .from('portfolios')
+      .select(
+        `
+        *,
+        positions (
+          id,
+          quantity,
+          average_cost,
+          total_invested,
+          current_price
+        )
+      `
+      )
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching portfolios:', error);
+      throw new Error(`Failed to fetch portfolio summaries: ${error.message}`);
+    }
+
+    // Calculate summary metrics for each portfolio
+    const summaries: PortfolioSummary[] = (data || []).map((portfolio: any) => {
+      const positions: Position[] = portfolio.positions || [];
+      const total_positions = positions.length;
+      const total_invested = positions.reduce(
+        (sum: number, pos: Position) => sum + (pos.total_invested || 0),
+        0
+      );
+
+      let current_value: number | undefined;
+      let unrealized_gain_loss: number | undefined;
+      let unrealized_gain_loss_percentage: number | undefined;
+
+      // Calculate current value if all positions have current prices
+      const hasAllCurrentPrices =
+        positions.length > 0 &&
+        positions.every((pos: Position) => pos.current_price !== null);
+      if (hasAllCurrentPrices) {
+        current_value = positions.reduce((sum: number, pos: Position) => {
+          return sum + pos.quantity * (pos.current_price || 0);
+        }, 0);
+
+        // Now current_value is guaranteed to be a number
+        unrealized_gain_loss = current_value - total_invested;
+        unrealized_gain_loss_percentage =
+          total_invested > 0
+            ? (unrealized_gain_loss / total_invested) * 100
+            : 0;
+      }
+
+      return {
+        ...portfolio,
+        positions: undefined, // Remove positions array from summary
+        total_positions,
+        total_invested,
+        current_value,
+        unrealized_gain_loss,
+        unrealized_gain_loss_percentage,
+      };
+    });
+
+    console.log('Fetched portfolio summaries:', summaries.length);
+    return summaries;
+  } catch (error) {
+    console.error('Error in fetchPortfolioSummaries:', error);
+
+    // Return empty array instead of throwing to prevent UI from breaking
+    console.log('Returning empty portfolio summaries array due to error');
+    return [];
+  }
 }
 
 /**
  * Fetch a single portfolio by ID
  */
-export async function fetchPortfolioById(id: string): Promise<Portfolio | null> {
+export async function fetchPortfolioById(
+  id: string
+): Promise<Portfolio | null> {
   if (!isSupabaseAvailable || !supabase) {
     throw new Error('Supabase is not configured');
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
@@ -147,58 +205,75 @@ export async function fetchPortfolioById(id: string): Promise<Portfolio | null> 
 /**
  * Create a new portfolio
  */
-export async function createPortfolio(input: CreatePortfolioInput): Promise<Portfolio> {
-  if (!isSupabaseAvailable || !supabase) {
-    throw new Error('Supabase is not configured');
+export async function createPortfolio(
+  input: CreatePortfolioInput
+): Promise<Portfolio> {
+  try {
+    if (!isSupabaseAvailable || !supabase) {
+      console.error('Supabase client not available');
+      throw new Error('Supabase is not configured');
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      throw new Error('User not authenticated');
+    }
+
+    console.log('Creating portfolio for user:', user.id, 'with data:', input);
+
+    const portfolioData: PortfolioInsert = {
+      user_id: user.id,
+      name: input.name.trim(),
+      description: input.description?.trim() || null,
+      asset_type: input.asset_type,
+    };
+
+    const { data, error } = await supabase
+      .from('portfolios')
+      .insert(portfolioData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating portfolio:', error);
+      throw new Error(`Failed to create portfolio: ${error.message}`);
+    }
+
+    console.log('Portfolio created successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in createPortfolio:', error);
+    throw error;
   }
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-
-  const portfolioData: PortfolioInsert = {
-    user_id: user.id,
-    name: input.name.trim(),
-    description: input.description?.trim() || null,
-    asset_type: input.asset_type
-  };
-
-  const { data, error } = await supabase
-    .from('portfolios')
-    .insert(portfolioData)
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`Failed to create portfolio: ${error.message}`);
-  }
-
-  return data;
 }
 
 /**
  * Update an existing portfolio
  */
 export async function updatePortfolio(
-  id: string, 
+  id: string,
   input: UpdatePortfolioInput
 ): Promise<Portfolio> {
   if (!isSupabaseAvailable || !supabase) {
     throw new Error('Supabase is not configured');
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
 
   const updateData: PortfolioUpdate = {};
-  
+
   if (input.name !== undefined) {
     updateData.name = input.name.trim();
   }
-  
+
   if (input.description !== undefined) {
     updateData.description = input.description?.trim() || null;
   }
@@ -226,7 +301,9 @@ export async function deletePortfolio(id: string): Promise<void> {
     throw new Error('Supabase is not configured');
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
@@ -250,14 +327,16 @@ export async function deletePortfolio(id: string): Promise<void> {
  * Check if a portfolio name is unique for the user
  */
 export async function isPortfolioNameUnique(
-  name: string, 
+  name: string,
   excludeId?: string
 ): Promise<boolean> {
   if (!isSupabaseAvailable || !supabase) {
     throw new Error('Supabase is not configured');
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
@@ -289,7 +368,9 @@ export async function getPortfolioCount(): Promise<number> {
     throw new Error('Supabase is not configured');
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }

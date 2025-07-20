@@ -2,6 +2,7 @@
  * Custom hooks for portfolio data management with TanStack Query
  */
 
+import { useEffect } from 'react';
 import { 
   useQuery, 
   useMutation, 
@@ -276,6 +277,21 @@ export function usePortfolioManager() {
   const deleteMutation = useDeletePortfolio();
   const prefetchPortfolio = usePrefetchPortfolio();
   const invalidatePortfolios = useInvalidatePortfolios();
+
+  // Handle retry logic for failed queries
+  useEffect(() => {
+    if (portfolios.error || summaries.error || count.error) {
+      console.log('Detected error in portfolio queries, scheduling retry');
+      const retryTimeout = setTimeout(() => {
+        console.log('Retrying portfolio queries');
+        if (portfolios.error) portfolios.refetch();
+        if (summaries.error) summaries.refetch();
+        if (count.error) count.refetch();
+      }, 5000); // Retry after 5 seconds
+      
+      return () => clearTimeout(retryTimeout);
+    }
+  }, [portfolios.error, summaries.error, count.error]);
 
   return {
     // Data

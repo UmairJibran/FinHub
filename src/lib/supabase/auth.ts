@@ -215,17 +215,21 @@ export class UserProfileService {
   static async getUserProfile(
     userId: string
   ): Promise<{ profile: UserProfile | null; error: any }> {
+    console.log('🚀 ~ UserProfileService ~ userId:', userId);
     if (!isSupabaseAvailable || !supabase) {
       return {
         profile: null,
         error: { message: 'Supabase is not configured' } as AuthError,
       };
     }
+
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
       .single();
+    console.log('🚀 ~ UserProfileService ~ error:', error);
+    console.log('🚀 ~ UserProfileService ~ data:', data);
 
     return {
       profile: data,

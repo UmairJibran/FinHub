@@ -53,7 +53,7 @@ src/
 ### Authentication Components
 
 - **LoginForm**: Handles email/password and Google OAuth login
-- **AuthProvider**: Context provider for authentication state
+- **AuthProvider**: Zustand for authentication state
 - **ProtectedRoute**: HOC for route protection
 
 ### Portfolio Management Components

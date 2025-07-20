@@ -1,6 +1,9 @@
 // Auth module exports
-export { AuthProvider, useAuth } from './AuthContext';
-export type { AuthContextType, SignInCredentials, SignUpCredentials, UserProfile } from './AuthContext';
+export { useAuthStore } from './authStore';
+export type { SignInCredentials, SignUpCredentials, UserProfile } from './authStore';
+
+// Export the useAuth hook from hooks directory
+export { useAuth } from '../../hooks/useAuth';
 
 // Re-export auth services
 export { AuthService, UserProfileService, SessionManager } from '../supabase/auth';
