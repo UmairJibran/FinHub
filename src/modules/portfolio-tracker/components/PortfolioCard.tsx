@@ -181,7 +181,7 @@ export function PortfolioCard({
 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-2">
-          <Button asChild variant="outline" size="sm" className="flex-1">
+          <Button asChild variant="outline" size="sm" className="flex-1 h-9">
             <Link to={`/portfolios/${portfolio.id}`}>
               <Eye className="h-4 w-4 mr-1" />
               View
@@ -191,7 +191,7 @@ export function PortfolioCard({
             <Button 
               variant="outline" 
               size="sm" 
-              className="flex-1"
+              className="flex-1 h-9"
               onClick={() => onEdit(portfolio)}
             >
               <Edit className="h-4 w-4 mr-1" />
@@ -201,7 +201,7 @@ export function PortfolioCard({
           {onAddPosition && (
             <Button 
               size="sm" 
-              className="flex-1"
+              className="flex-1 h-9"
               onClick={() => onAddPosition(portfolio)}
             >
               <Plus className="h-4 w-4 mr-1" />

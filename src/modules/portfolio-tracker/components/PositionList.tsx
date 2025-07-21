@@ -238,121 +238,228 @@ export function PositionList({
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => {
-                        if (sortBy === 'symbol') {
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        } else {
-                          setSortBy('symbol');
-                          setSortOrder('asc');
-                        }
-                      }}
-                    >
-                      Symbol
-                    </TableHead>
-                    <TableHead>Asset Name</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Avg Cost</TableHead>
-                    <TableHead className="text-right">Total Invested</TableHead>
-                    <TableHead className="text-right">Current Price</TableHead>
-                    <TableHead className="text-right">Current Value</TableHead>
-                    <TableHead className="text-right">Gain/Loss</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedPositions.map((position) => {
-                    const metrics = calculatePositionMetrics(
-                      position,
-                      position.current_price || undefined
-                    );
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          if (sortBy === 'symbol') {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy('symbol');
+                            setSortOrder('asc');
+                          }
+                        }}
+                      >
+                        Symbol
+                      </TableHead>
+                      <TableHead>Asset Name</TableHead>
+                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead className="text-right">Avg Cost</TableHead>
+                      <TableHead className="text-right">Total Invested</TableHead>
+                      <TableHead className="text-right">Current Price</TableHead>
+                      <TableHead className="text-right">Current Value</TableHead>
+                      <TableHead className="text-right">Gain/Loss</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedPositions.map((position) => {
+                      const metrics = calculatePositionMetrics(
+                        position,
+                        position.current_price || undefined
+                      );
 
-                    return (
-                      <TableRow key={position.id}>
-                        <TableCell className="font-medium">
-                          <Badge variant="outline">{position.symbol}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-[200px] truncate" title={position.name}>
-                            {position.name}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {position.quantity.toLocaleString(undefined, {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 8,
-                          })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(position.average_cost)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(position.total_invested)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {position.current_price 
-                            ? formatCurrency(position.current_price)
-                            : '-'
-                          }
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {metrics.currentValue 
-                            ? formatCurrency(metrics.currentValue)
-                            : '-'
-                          }
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {metrics.unrealizedGainLoss !== undefined ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <span className={getGainLossColor(metrics.unrealizedGainLoss)}>
-                                {formatCurrency(metrics.unrealizedGainLoss)}
-                              </span>
-                              {metrics.unrealizedGainLossPercentage !== undefined && (
-                                <Badge 
-                                  variant={metrics.unrealizedGainLoss >= 0 ? 'default' : 'destructive'}
-                                  className="text-xs"
-                                >
-                                  {formatPercentage(metrics.unrealizedGainLossPercentage)}
-                                </Badge>
-                              )}
+                      return (
+                        <TableRow key={position.id}>
+                          <TableCell className="font-medium">
+                            <Badge variant="outline">{position.symbol}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-[200px] truncate" title={position.name}>
+                              {position.name}
                             </div>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => onEditPosition(position)}>
-                                <Edit3 className="h-4 w-4 mr-2" />
-                                Edit Position
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => onDeletePosition(position)}
-                                className="text-red-600 dark:text-red-400"
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {position.quantity.toLocaleString(undefined, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 8,
+                            })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(position.average_cost)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(position.total_invested)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {position.current_price 
+                              ? formatCurrency(position.current_price)
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {metrics.currentValue 
+                              ? formatCurrency(metrics.currentValue)
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {metrics.unrealizedGainLoss !== undefined ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <span className={getGainLossColor(metrics.unrealizedGainLoss)}>
+                                  {formatCurrency(metrics.unrealizedGainLoss)}
+                                </span>
+                                {metrics.unrealizedGainLossPercentage !== undefined && (
+                                  <Badge 
+                                    variant={metrics.unrealizedGainLoss >= 0 ? 'default' : 'destructive'}
+                                    className="text-xs"
+                                  >
+                                    {formatPercentage(metrics.unrealizedGainLossPercentage)}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => onEditPosition(position)}>
+                                  <Edit3 className="h-4 w-4 mr-2" />
+                                  Edit Position
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => onDeletePosition(position)}
+                                  className="text-red-600 dark:text-red-400"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Position
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {sortedPositions.map((position) => {
+                  const metrics = calculatePositionMetrics(
+                    position,
+                    position.current_price || undefined
+                  );
+
+                  return (
+                    <Card key={position.id} className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-sm font-medium">
+                              {position.symbol}
+                            </Badge>
+                            {metrics.unrealizedGainLoss !== undefined && (
+                              <Badge 
+                                variant={metrics.unrealizedGainLoss >= 0 ? 'default' : 'destructive'}
+                                className="text-xs"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Position
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                                {getGainLossIcon(metrics.unrealizedGainLoss)}
+                                {formatPercentage(metrics.unrealizedGainLossPercentage || 0)}
+                              </Badge>
+                            )}
+                          </div>
+                          <h3 className="font-medium text-sm leading-tight">
+                            {position.name}
+                          </h3>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onEditPosition(position)}>
+                              <Edit3 className="h-4 w-4 mr-2" />
+                              Edit Position
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => onDeletePosition(position)}
+                              className="text-red-600 dark:text-red-400"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Position
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-muted-foreground text-xs">Quantity</p>
+                          <p className="font-medium">
+                            {position.quantity.toLocaleString(undefined, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 8,
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">Avg Cost</p>
+                          <p className="font-medium">{formatCurrency(position.average_cost)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">Total Invested</p>
+                          <p className="font-medium">{formatCurrency(position.total_invested)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">Current Price</p>
+                          <p className="font-medium">
+                            {position.current_price 
+                              ? formatCurrency(position.current_price)
+                              : '-'
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      {metrics.currentValue && (
+                        <div className="mt-3 pt-3 border-t">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-muted-foreground text-xs">Current Value</p>
+                              <p className="font-semibold">{formatCurrency(metrics.currentValue)}</p>
+                            </div>
+                            {metrics.unrealizedGainLoss !== undefined && (
+                              <div className="text-right">
+                                <p className="text-muted-foreground text-xs">Gain/Loss</p>
+                                <p className={`font-semibold ${getGainLossColor(metrics.unrealizedGainLoss)}`}>
+                                  {formatCurrency(metrics.unrealizedGainLoss)}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

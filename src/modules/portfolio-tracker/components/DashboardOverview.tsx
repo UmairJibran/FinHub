@@ -232,7 +232,7 @@ export function DashboardOverview() {
   return (
     <div className="space-y-6">
       {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Portfolio Value"
           value={formatCurrency(metrics.totalValue)}
@@ -261,7 +261,7 @@ export function DashboardOverview() {
       {/* Portfolio Summaries */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Portfolio Overview</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {summaries.map((portfolio) => (
             <PortfolioSummaryCard
               key={portfolio.id}

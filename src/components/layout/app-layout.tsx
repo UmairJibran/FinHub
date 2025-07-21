@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import { Header } from "./header";
 import { Footer } from "./footer";
 import { Sidebar, MobileSidebar } from "./sidebar";
+import { BottomNavigation } from "./bottom-navigation";
 import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -19,6 +20,15 @@ export function AppLayout({ children }: AppLayoutProps) {
   
   // Determine if we should show the sidebar
   const shouldShowSidebar = isAuthenticated && (
+    location.pathname.startsWith('/dashboard') ||
+    location.pathname.startsWith('/portfolios') ||
+    location.pathname.startsWith('/analytics') ||
+    location.pathname.startsWith('/transactions') ||
+    location.pathname.startsWith('/settings')
+  );
+
+  // Determine if we should show the bottom navigation
+  const shouldShowBottomNav = isAuthenticated && (
     location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/portfolios') ||
     location.pathname.startsWith('/analytics') ||
@@ -48,8 +58,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         
         {/* Main content area */}
         <div className="flex-1 flex flex-col">
-          {/* Mobile sidebar toggle for portfolio pages */}
-          {shouldShowSidebar && (
+          {/* Mobile sidebar toggle for portfolio pages - only show if no bottom nav */}
+          {shouldShowSidebar && !shouldShowBottomNav && (
             <div className="lg:hidden border-b p-4">
               <Button
                 variant="ghost"
@@ -64,13 +74,16 @@ export function AppLayout({ children }: AppLayoutProps) {
           )}
           
           {/* Page content */}
-          <main className="flex-1">
+          <main className={`flex-1 ${shouldShowBottomNav ? 'pb-24' : 'pb-4'} lg:pb-0`}>
             {children}
           </main>
         </div>
       </div>
       
-      <Footer />
+      {/* Bottom Navigation for Mobile */}
+      {shouldShowBottomNav && <BottomNavigation />}
+      
+      <Footer className="hidden lg:block" />
     </div>
   );
 }
@@ -85,7 +98,7 @@ interface PageLayoutProps {
 
 export function PageLayout({ children, title, description, className = "" }: PageLayoutProps) {
   return (
-    <div className={`container mx-auto px-4 py-6 ${className}`}>
+    <div className={`container mx-auto px-4 py-6 pb-8 ${className}`}>
       {(title || description) && (
         <div className="mb-6">
           {title && (

@@ -1,4 +1,4 @@
-import { Github, Menu, User, LogOut, BarChart3 } from "lucide-react";
+import { Github, Menu, User, LogOut, BarChart3, Briefcase } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -111,11 +111,11 @@ export function Header(): JSX.Element {
             {/* Mobile Navigation Menu */}
             {isMobileMenuOpen && (
                 <div className="md:hidden border-t bg-background">
-                    <nav className="container py-4 space-y-4">
+                    <nav className="container py-4 space-y-2">
                         <Link 
                             to="/calculators" 
-                            className={`block text-sm font-medium transition-colors hover:text-primary ${
-                                isActive('/calculators') ? 'text-primary' : 'text-muted-foreground'
+                            className={`block py-3 px-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-muted/50 ${
+                                isActive('/calculators') ? 'text-primary bg-muted/30' : 'text-muted-foreground'
                             }`}
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
@@ -126,24 +126,27 @@ export function Header(): JSX.Element {
                             <>
                                 <Link 
                                     to="/dashboard" 
-                                    className={`block text-sm font-medium transition-colors hover:text-primary ${
-                                        isActive('/dashboard') ? 'text-primary' : 'text-muted-foreground'
+                                    className={`block py-3 px-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-muted/50 ${
+                                        isActive('/dashboard') ? 'text-primary bg-muted/30' : 'text-muted-foreground'
                                     }`}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <BarChart3 className="h-4 w-4" />
+                                        <BarChart3 className="h-5 w-5" />
                                         Dashboard
                                     </div>
                                 </Link>
                                 <Link 
                                     to="/portfolios" 
-                                    className={`block text-sm font-medium transition-colors hover:text-primary ${
-                                        isActive('/portfolios') ? 'text-primary' : 'text-muted-foreground'
+                                    className={`block py-3 px-2 text-base font-medium transition-colors hover:text-primary rounded-md hover:bg-muted/50 ${
+                                        isActive('/portfolios') ? 'text-primary bg-muted/30' : 'text-muted-foreground'
                                     }`}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
-                                    Portfolios
+                                    <div className="flex items-center gap-2">
+                                        <Briefcase className="h-5 w-5" />
+                                        Portfolios
+                                    </div>
                                 </Link>
                                 
                                 <div className="pt-4 border-t">

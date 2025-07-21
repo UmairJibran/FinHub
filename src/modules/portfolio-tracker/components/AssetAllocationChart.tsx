@@ -96,14 +96,14 @@ function CustomLegend({ payload }: CustomLegendProps) {
   if (!payload) return null;
 
   return (
-    <div className="flex flex-wrap justify-center gap-4 mt-4">
+    <div className="flex flex-wrap justify-center gap-2 md:gap-4 mt-4">
       {payload.map((entry, index) => (
-        <div key={index} className="flex items-center gap-2">
+        <div key={index} className="flex items-center gap-1 md:gap-2">
           <div 
             className="w-3 h-3 rounded-full" 
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs md:text-sm text-muted-foreground">
             {entry.payload.label} ({entry.payload.percentage.toFixed(1)}%)
           </span>
         </div>
@@ -190,17 +190,18 @@ export function AssetAllocationChart({ className }: AssetAllocationChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-80">
+        <div className="h-64 md:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={allocationData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={120}
+                innerRadius={40}
+                outerRadius={80}
                 paddingAngle={2}
                 dataKey="value"
+                className="md:!inner-radius-[60px] md:!outer-radius-[120px]"
               >
                 {allocationData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />

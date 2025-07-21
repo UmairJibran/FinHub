@@ -204,28 +204,28 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
         </Select>
       </CardHeader>
       <CardContent>
-        <div className="h-80">
+        <div className="h-64 md:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={performanceData}
               margin={{
                 top: 5,
-                right: 30,
-                left: 20,
+                right: 10,
+                left: 10,
                 bottom: 5,
               }}
             >
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis 
                 dataKey="month" 
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
                 tickLine={false}
               />
               <YAxis 
                 tickFormatter={(value) => `$${value/1000}k`}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
                 tickLine={false}
-                width={60}
+                width={40}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
