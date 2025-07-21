@@ -3,6 +3,7 @@
  */
 
 import { supabase, isSupabaseAvailable } from '../../../lib/supabase/client';
+import { CustomError, ErrorType, withRetry } from '../../../lib/error-handling';
 import type {
   Portfolio,
   PortfolioSummary,
@@ -31,18 +32,24 @@ interface Position {
  * Fetch all portfolios for the authenticated user
  */
 export async function fetchPortfolios(): Promise<Portfolio[]> {
-  try {
+  return withRetry(async () => {
     if (!isSupabaseAvailable || !supabase) {
-      console.error('Supabase client not available');
-      throw new Error('Supabase is not configured');
+      throw new CustomError(
+        'Database connection not available',
+        ErrorType.SERVER,
+        { retryable: true }
+      );
     }
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      console.error('No authenticated user found');
-      throw new Error('User not authenticated');
+      throw new CustomError(
+        'Authentication required',
+        ErrorType.AUTHENTICATION,
+        { retryable: false }
+      );
     }
 
     console.log('Fetching portfolios for user:', user.id);
@@ -55,18 +62,31 @@ export async function fetchPortfolios(): Promise<Portfolio[]> {
 
     if (error) {
       console.error('Error fetching portfolios:', error);
-      throw new Error(`Failed to fetch portfolios: ${error.message}`);
+      
+      if (error.code === '42501') {
+        throw new CustomError(
+          'Access denied. Please check your permissions.',
+          ErrorType.AUTHORIZATION,
+          { retryable: false, code: error.code }
+        );
+      }
+      
+      throw new CustomError(
+        'Failed to load portfolios',
+        ErrorType.SERVER,
+        { retryable: true, cause: error }
+      );
     }
 
     console.log('Fetched portfolios:', data?.length || 0);
     return data || [];
-  } catch (error) {
-    console.error('Error in fetchPortfolios:', error);
-
-    // Return empty array instead of throwing to prevent UI from breaking
-    console.log('Returning empty portfolio array due to error');
-    return [];
-  }
+  }, {
+    maxRetries: 3,
+    shouldRetry: (error) => {
+      const customError = error instanceof CustomError ? error : new CustomError(error.message);
+      return customError.retryable ?? false;
+    }
+  });
 }
 
 /**
@@ -208,46 +228,68 @@ export async function fetchPortfolioById(
 export async function createPortfolio(
   input: CreatePortfolioInput
 ): Promise<Portfolio> {
-  try {
-    if (!isSupabaseAvailable || !supabase) {
-      console.error('Supabase client not available');
-      throw new Error('Supabase is not configured');
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      console.error('No authenticated user found');
-      throw new Error('User not authenticated');
-    }
-
-    console.log('Creating portfolio for user:', user.id, 'with data:', input);
-
-    const portfolioData: PortfolioInsert = {
-      user_id: user.id,
-      name: input.name.trim(),
-      description: input.description?.trim() || null,
-      asset_type: input.asset_type,
-    };
-
-    const { data, error } = await supabase
-      .from('portfolios')
-      .insert(portfolioData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating portfolio:', error);
-      throw new Error(`Failed to create portfolio: ${error.message}`);
-    }
-
-    console.log('Portfolio created successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('Error in createPortfolio:', error);
-    throw error;
+  if (!isSupabaseAvailable || !supabase) {
+    throw new CustomError(
+      'Database connection not available',
+      ErrorType.SERVER,
+      { retryable: true }
+    );
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new CustomError(
+      'Authentication required',
+      ErrorType.AUTHENTICATION,
+      { retryable: false }
+    );
+  }
+
+  console.log('Creating portfolio for user:', user.id, 'with data:', input);
+
+  const portfolioData: PortfolioInsert = {
+    user_id: user.id,
+    name: input.name.trim(),
+    description: input.description?.trim() || null,
+    asset_type: input.asset_type,
+  };
+
+  const { data, error } = await supabase
+    .from('portfolios')
+    .insert(portfolioData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating portfolio:', error);
+    
+    if (error.code === '23505') {
+      throw new CustomError(
+        'A portfolio with this name already exists',
+        ErrorType.VALIDATION,
+        { retryable: false, code: error.code }
+      );
+    }
+    
+    if (error.code === '42501') {
+      throw new CustomError(
+        'Access denied. Please check your permissions.',
+        ErrorType.AUTHORIZATION,
+        { retryable: false, code: error.code }
+      );
+    }
+    
+    throw new CustomError(
+      'Failed to create portfolio',
+      ErrorType.SERVER,
+      { retryable: true, cause: error }
+    );
+  }
+
+  console.log('Portfolio created successfully:', data);
+  return data;
 }
 
 /**

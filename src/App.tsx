@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Zustand auth store is initialized automatically when imported
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
+import { ErrorBoundary } from './components/error/ErrorBoundary';
 import RootLayout from './app/layout';
 import './app/globals.css';
 
@@ -24,16 +25,40 @@ const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000, // 5 minutes
       gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        // Don't retry on auth errors
+        if (error?.message?.includes('JWT') || error?.message?.includes('auth')) {
+          return false;
+        }
+        // Don't retry on 4xx errors except 429 (rate limit)
+        if (error?.statusCode >= 400 && error?.statusCode < 500 && error?.statusCode !== 429) {
+          return false;
+        }
+        // Retry up to 3 times for other errors
+        return failureCount < 3;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+    mutations: {
+      retry: (failureCount, error: any) => {
+        // Don't retry mutations on client errors
+        if (error?.statusCode >= 400 && error?.statusCode < 500) {
+          return false;
+        }
+        // Retry up to 2 times for server errors
+        return failureCount < 2;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
   },
 });
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-        <Router>
-          <RootLayout>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+          <Router>
+            <RootLayout>
             <Routes>
               {/* Public routes - accessible without authentication */}
               <Route path="/" element={<HomePage />} />
@@ -93,9 +118,10 @@ function App() {
                 }
               />
             </Routes>
-          </RootLayout>
-        </Router>
-    </QueryClientProvider>
+            </RootLayout>
+          </Router>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

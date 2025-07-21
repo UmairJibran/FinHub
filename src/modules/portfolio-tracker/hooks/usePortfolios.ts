@@ -10,6 +10,7 @@ import {
   type UseQueryResult,
   type UseMutationResult 
 } from '@tanstack/react-query';
+import { useErrorHandler } from '../../../lib/error-handling';
 import { 
   fetchPortfolios,
   fetchPortfolioSummaries,
@@ -116,6 +117,7 @@ export function useCreatePortfolio(): UseMutationResult<
   unknown
 > {
   const queryClient = useQueryClient();
+  const { handleError, handleSuccess } = useErrorHandler();
 
   return useMutation({
     mutationFn: createPortfolio,
@@ -131,9 +133,12 @@ export function useCreatePortfolio(): UseMutationResult<
           return [newPortfolio, ...oldData];
         }
       );
+
+      handleSuccess('Portfolio created successfully');
     },
     onError: (error) => {
       console.error('Failed to create portfolio:', error);
+      handleError(error, 'Failed to create portfolio');
     },
   });
 }
@@ -148,6 +153,7 @@ export function useUpdatePortfolio(): UseMutationResult<
   unknown
 > {
   const queryClient = useQueryClient();
+  const { handleError, handleSuccess } = useErrorHandler();
 
   return useMutation({
     mutationFn: ({ id, input }) => updatePortfolio(id, input),
@@ -171,9 +177,12 @@ export function useUpdatePortfolio(): UseMutationResult<
 
       // Invalidate summaries to recalculate metrics
       queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
+      
+      handleSuccess('Portfolio updated successfully');
     },
     onError: (error) => {
       console.error('Failed to update portfolio:', error);
+      handleError(error, 'Failed to update portfolio');
     },
   });
 }
@@ -188,6 +197,7 @@ export function useDeletePortfolio(): UseMutationResult<
   unknown
 > {
   const queryClient = useQueryClient();
+  const { handleError, handleSuccess } = useErrorHandler();
 
   return useMutation({
     mutationFn: deletePortfolio,
@@ -207,9 +217,12 @@ export function useDeletePortfolio(): UseMutationResult<
       // Invalidate summaries and count
       queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
       queryClient.invalidateQueries({ queryKey: portfolioKeys.count() });
+      
+      handleSuccess('Portfolio deleted successfully');
     },
     onError: (error) => {
       console.error('Failed to delete portfolio:', error);
+      handleError(error, 'Failed to delete portfolio');
     },
   });
 }
