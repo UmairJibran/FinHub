@@ -3,6 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CacheManager } from '../lib/cache-utils';
 import {
   fetchTransactions,
   fetchTransactionsByPosition,
@@ -13,9 +14,8 @@ import {
   deleteTransaction,
   getTransactionStats,
   type TransactionQueryParams,
-  type TransactionWithDetails,
 } from '../lib/transaction-service';
-import type { CreateTransactionInput } from '../lib/types';
+import type { Transaction } from '../lib/types';
 
 // ============================================================================
 // QUERY KEYS
@@ -45,8 +45,8 @@ export function useTransactions(params: TransactionQueryParams = {}) {
     queryKey: transactionKeys.list(params),
     queryFn: () => fetchTransactions(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    keepPreviousData: true,
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+    placeholderData: (previousData) => previousData, // Replaces keepPreviousData in v5
   });
 }
 
@@ -59,7 +59,7 @@ export function useTransactionsByPosition(positionId: string) {
     queryFn: () => fetchTransactionsByPosition(positionId),
     enabled: !!positionId,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -72,7 +72,7 @@ export function useTransactionsByPortfolio(portfolioId: string) {
     queryFn: () => fetchTransactionsByPortfolio(portfolioId),
     enabled: !!portfolioId,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -84,7 +84,7 @@ export function useRecentTransactions(limit: number = 10) {
     queryKey: transactionKeys.recent(limit),
     queryFn: () => fetchRecentTransactions(limit),
     staleTime: 2 * 60 * 1000, // 2 minutes for recent data
-    cacheTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
@@ -97,7 +97,7 @@ export function useTransaction(id: string) {
     queryFn: () => fetchTransactionById(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -109,7 +109,7 @@ export function useTransactionStats() {
     queryKey: transactionKeys.stats(),
     queryFn: getTransactionStats,
     staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 15 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 }
 
@@ -122,31 +122,60 @@ export function useTransactionStats() {
  */
 export function useCreateTransaction() {
   const queryClient = useQueryClient();
+  const cacheManager = new CacheManager(queryClient);
 
   return useMutation({
-    mutationFn: createTransaction,
-    onSuccess: (newTransaction) => {
-      // Invalidate and refetch transaction lists
-      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: transactionKeys.recent(10) });
-      queryClient.invalidateQueries({ queryKey: transactionKeys.stats() });
-      
-      // Invalidate position-specific and portfolio-specific queries
-      queryClient.invalidateQueries({ 
-        queryKey: transactionKeys.byPosition(newTransaction.position_id) 
-      });
-      
-      // We don't have portfolio_id directly, so invalidate all portfolio queries
-      queryClient.invalidateQueries({ 
-        queryKey: ['transactions', 'portfolio'] 
-      });
+    mutationFn: (input: any) => createTransaction(input),
+    // Optimistic update
+    onMutate: async (newTransactionInput) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: transactionKeys.recent(10) });
 
-      // Also invalidate position and portfolio data since transactions affect them
+      // Snapshot the previous value
+      const previousRecentTransactions = queryClient.getQueryData<Transaction[]>(
+        transactionKeys.recent(10)
+      );
+
+      // Create optimistic transaction object
+      const optimisticTransaction: Transaction = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        position_id: newTransactionInput.position_id,
+        type: newTransactionInput.type as any,
+        quantity: newTransactionInput.quantity,
+        price: newTransactionInput.price,
+        transaction_date: newTransactionInput.transaction_date || new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      // Optimistically update the cache
+      cacheManager.optimistic.optimisticallyAddTransaction(optimisticTransaction);
+
+      return { previousRecentTransactions };
+    },
+    onSuccess: (newTransaction, _variables, _context) => {
+      // Replace optimistic update with real data
+      cacheManager.optimistic.optimisticallyAddTransaction(newTransaction);
+      
+      // Invalidate related queries
+      cacheManager.invalidation.invalidateTransactionData(newTransaction.position_id);
+    },
+    onError: (error, _variables, context) => {
+      // Rollback optimistic update
+      if (context?.previousRecentTransactions) {
+        queryClient.setQueryData(
+          transactionKeys.recent(10), 
+          context.previousRecentTransactions
+        );
+      }
+      
+      console.error('Failed to create transaction:', error);
+    },
+    // Always refetch after error or success
+    onSettled: (_data, _error, _variables) => {
+      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.stats() });
       queryClient.invalidateQueries({ queryKey: ['positions'] });
       queryClient.invalidateQueries({ queryKey: ['portfolios'] });
-    },
-    onError: (error) => {
-      console.error('Failed to create transaction:', error);
     },
   });
 }
@@ -156,32 +185,59 @@ export function useCreateTransaction() {
  */
 export function useDeleteTransaction() {
   const queryClient = useQueryClient();
+  const cacheManager = new CacheManager(queryClient);
 
   return useMutation({
     mutationFn: deleteTransaction,
-    onSuccess: (_, deletedId) => {
-      // Remove the deleted transaction from cache
-      queryClient.removeQueries({ queryKey: transactionKeys.detail(deletedId) });
-      
-      // Invalidate all transaction lists
-      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: transactionKeys.recent(10) });
-      queryClient.invalidateQueries({ queryKey: transactionKeys.stats() });
-      
-      // Invalidate all position and portfolio specific queries
-      queryClient.invalidateQueries({ 
-        queryKey: ['transactions', 'position'] 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: ['transactions', 'portfolio'] 
-      });
+    // Optimistic update
+    onMutate: async (deletedId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: transactionKeys.detail(deletedId) });
+      await queryClient.cancelQueries({ queryKey: transactionKeys.recent(10) });
 
-      // Also invalidate position and portfolio data
+      // Snapshot the previous values
+      const previousTransaction = queryClient.getQueryData<Transaction>(
+        transactionKeys.detail(deletedId)
+      );
+      const previousRecentTransactions = queryClient.getQueryData<Transaction[]>(
+        transactionKeys.recent(10)
+      );
+
+      // Optimistically remove the transaction from recent transactions
+      if (previousRecentTransactions) {
+        const updatedRecentTransactions = previousRecentTransactions.filter(
+          t => t.id !== deletedId
+        );
+        queryClient.setQueryData(transactionKeys.recent(10), updatedRecentTransactions);
+      }
+
+      // Remove from cache
+      queryClient.removeQueries({ queryKey: transactionKeys.detail(deletedId) });
+
+      return { previousTransaction, previousRecentTransactions };
+    },
+    onSuccess: (_, _deletedId, context) => {
+      // Invalidate all related data
+      if (context?.previousTransaction) {
+        cacheManager.invalidation.invalidateTransactionData(context.previousTransaction.position_id);
+      }
+    },
+    onError: (error, deletedId, context) => {
+      // Rollback optimistic updates
+      if (context?.previousTransaction) {
+        queryClient.setQueryData(transactionKeys.detail(deletedId), context.previousTransaction);
+      }
+      if (context?.previousRecentTransactions) {
+        queryClient.setQueryData(transactionKeys.recent(10), context.previousRecentTransactions);
+      }
+      
+      console.error('Failed to delete transaction:', error);
+    },
+    // Always refetch after error or success
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: ['positions'] });
       queryClient.invalidateQueries({ queryKey: ['portfolios'] });
-    },
-    onError: (error) => {
-      console.error('Failed to delete transaction:', error);
     },
   });
 }

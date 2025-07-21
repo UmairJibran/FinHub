@@ -25,6 +25,14 @@ const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000, // 5 minutes
       gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      refetchOnMount: true,
+      // Enable background refetching for better UX
+      refetchInterval: false, // Disable automatic polling by default
+      refetchIntervalInBackground: false,
+      // Network mode for better offline handling
+      networkMode: 'online',
+      // Retry configuration with exponential backoff
       retry: (failureCount, error: any) => {
         // Don't retry on auth errors
         if (error?.message?.includes('JWT') || error?.message?.includes('auth')) {
@@ -38,8 +46,14 @@ const queryClient = new QueryClient({
         return failureCount < 3;
       },
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      // Enable structural sharing for better performance
+      structuralSharing: true,
+      // Keep previous data during refetch for better UX
+      placeholderData: (previousData: any) => previousData,
     },
     mutations: {
+      // Network mode for mutations
+      networkMode: 'online',
       retry: (failureCount, error: any) => {
         // Don't retry mutations on client errors
         if (error?.statusCode >= 400 && error?.statusCode < 500) {

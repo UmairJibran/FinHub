@@ -11,6 +11,7 @@ import {
   type UseMutationResult 
 } from '@tanstack/react-query';
 import { useErrorHandler } from '../../../lib/error-handling';
+import { CacheManager } from '../lib/cache-utils';
 import { 
   fetchPortfolios,
   fetchPortfolioSummaries,
@@ -114,31 +115,59 @@ export function useCreatePortfolio(): UseMutationResult<
   Portfolio,
   Error,
   CreatePortfolioInput,
-  unknown
+  { previousPortfolios?: Portfolio[] }
 > {
   const queryClient = useQueryClient();
   const { handleError, handleSuccess } = useErrorHandler();
+  const cacheManager = new CacheManager(queryClient);
 
   return useMutation({
     mutationFn: createPortfolio,
-    onSuccess: (newPortfolio) => {
-      // Invalidate and refetch portfolio queries
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
+    // Optimistic update
+    onMutate: async (newPortfolioInput) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: portfolioKeys.lists() });
+
+      // Snapshot the previous value
+      const previousPortfolios = queryClient.getQueryData<Portfolio[]>(portfolioKeys.lists());
+
+      // Create optimistic portfolio object
+      const optimisticPortfolio: Portfolio = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        user_id: '', // Will be set by server
+        name: newPortfolioInput.name,
+        description: newPortfolioInput.description,
+        asset_type: newPortfolioInput.asset_type,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Optimistically update the cache
+      cacheManager.optimistic.optimisticallyAddPortfolio(optimisticPortfolio);
+
+      return { previousPortfolios };
+    },
+    onSuccess: (newPortfolio, _variables, _context) => {
+      // Replace optimistic update with real data
+      cacheManager.optimistic.optimisticallyAddPortfolio(newPortfolio);
       
-      // Optimistically add the new portfolio to the cache
-      queryClient.setQueryData<Portfolio[]>(
-        portfolioKeys.lists(),
-        (oldData) => {
-          if (!oldData) return [newPortfolio];
-          return [newPortfolio, ...oldData];
-        }
-      );
+      // Invalidate related queries
+      cacheManager.invalidation.invalidatePortfolioData(newPortfolio.id);
 
       handleSuccess('Portfolio created successfully');
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      // Rollback optimistic update
+      if (context?.previousPortfolios) {
+        queryClient.setQueryData(portfolioKeys.lists(), context.previousPortfolios);
+      }
+      
       console.error('Failed to create portfolio:', error);
       handleError(error, 'Failed to create portfolio');
+    },
+    // Always refetch after error or success
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
     },
   });
 }
@@ -150,39 +179,63 @@ export function useUpdatePortfolio(): UseMutationResult<
   Portfolio,
   Error,
   { id: string; input: UpdatePortfolioInput },
-  unknown
+  { previousPortfolio?: Portfolio; previousPortfolios?: Portfolio[] }
 > {
   const queryClient = useQueryClient();
   const { handleError, handleSuccess } = useErrorHandler();
+  const cacheManager = new CacheManager(queryClient);
 
   return useMutation({
     mutationFn: ({ id, input }) => updatePortfolio(id, input),
-    onSuccess: (updatedPortfolio, { id }) => {
-      // Update the specific portfolio in cache
-      queryClient.setQueryData<Portfolio>(
-        portfolioKeys.detail(id),
-        updatedPortfolio
-      );
+    // Optimistic update
+    onMutate: async ({ id, input }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: portfolioKeys.detail(id) });
+      await queryClient.cancelQueries({ queryKey: portfolioKeys.lists() });
 
-      // Update the portfolio in the list cache
-      queryClient.setQueryData<Portfolio[]>(
-        portfolioKeys.lists(),
-        (oldData) => {
-          if (!oldData) return [updatedPortfolio];
-          return oldData.map(portfolio => 
-            portfolio.id === id ? updatedPortfolio : portfolio
-          );
-        }
-      );
+      // Snapshot the previous values
+      const previousPortfolio = queryClient.getQueryData<Portfolio>(portfolioKeys.detail(id));
+      const previousPortfolios = queryClient.getQueryData<Portfolio[]>(portfolioKeys.lists());
 
-      // Invalidate summaries to recalculate metrics
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
+      // Create optimistic updated portfolio
+      if (previousPortfolio) {
+        const optimisticPortfolio: Portfolio = {
+          ...previousPortfolio,
+          ...input,
+          updated_at: new Date().toISOString(),
+        };
+
+        // Optimistically update the cache
+        cacheManager.optimistic.optimisticallyUpdatePortfolio(optimisticPortfolio);
+      }
+
+      return { previousPortfolio, previousPortfolios };
+    },
+    onSuccess: (updatedPortfolio, { id }, _context) => {
+      // Update with real data
+      cacheManager.optimistic.optimisticallyUpdatePortfolio(updatedPortfolio);
+      
+      // Invalidate related queries
+      cacheManager.invalidation.invalidatePortfolioData(id);
       
       handleSuccess('Portfolio updated successfully');
     },
-    onError: (error) => {
+    onError: (error, { id }, context) => {
+      // Rollback optimistic updates
+      if (context?.previousPortfolio) {
+        queryClient.setQueryData(portfolioKeys.detail(id), context.previousPortfolio);
+      }
+      if (context?.previousPortfolios) {
+        queryClient.setQueryData(portfolioKeys.lists(), context.previousPortfolios);
+      }
+      
       console.error('Failed to update portfolio:', error);
       handleError(error, 'Failed to update portfolio');
+    },
+    // Always refetch after error or success
+    onSettled: (_data, _error, { id }) => {
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
     },
   });
 }
@@ -194,35 +247,50 @@ export function useDeletePortfolio(): UseMutationResult<
   void,
   Error,
   string,
-  unknown
+  { previousPortfolio?: Portfolio; previousPortfolios?: Portfolio[] }
 > {
   const queryClient = useQueryClient();
   const { handleError, handleSuccess } = useErrorHandler();
+  const cacheManager = new CacheManager(queryClient);
 
   return useMutation({
     mutationFn: deletePortfolio,
-    onSuccess: (_, deletedId) => {
-      // Remove the portfolio from cache
-      queryClient.removeQueries({ queryKey: portfolioKeys.detail(deletedId) });
+    // Optimistic update
+    onMutate: async (deletedId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: portfolioKeys.detail(deletedId) });
+      await queryClient.cancelQueries({ queryKey: portfolioKeys.lists() });
 
-      // Remove from the list cache
-      queryClient.setQueryData<Portfolio[]>(
-        portfolioKeys.lists(),
-        (oldData) => {
-          if (!oldData) return [];
-          return oldData.filter(portfolio => portfolio.id !== deletedId);
-        }
-      );
+      // Snapshot the previous values
+      const previousPortfolio = queryClient.getQueryData<Portfolio>(portfolioKeys.detail(deletedId));
+      const previousPortfolios = queryClient.getQueryData<Portfolio[]>(portfolioKeys.lists());
 
-      // Invalidate summaries and count
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.count() });
+      // Optimistically remove the portfolio
+      cacheManager.optimistic.optimisticallyRemovePortfolio(deletedId);
+
+      return { previousPortfolio, previousPortfolios };
+    },
+    onSuccess: (_, deletedId, _context) => {
+      // Invalidate all related data
+      cacheManager.invalidation.invalidatePortfolioData(deletedId);
       
       handleSuccess('Portfolio deleted successfully');
     },
-    onError: (error) => {
+    onError: (error, deletedId, context) => {
+      // Rollback optimistic updates
+      if (context?.previousPortfolio) {
+        queryClient.setQueryData(portfolioKeys.detail(deletedId), context.previousPortfolio);
+      }
+      if (context?.previousPortfolios) {
+        queryClient.setQueryData(portfolioKeys.lists(), context.previousPortfolios);
+      }
+      
       console.error('Failed to delete portfolio:', error);
       handleError(error, 'Failed to delete portfolio');
+    },
+    // Always refetch after error or success
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
     },
   });
 }

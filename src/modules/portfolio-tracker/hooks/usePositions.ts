@@ -3,6 +3,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CacheManager } from '../lib/cache-utils';
 import {
   fetchPositionsByPortfolio,
   fetchPositionsWithMetrics,
@@ -17,10 +18,8 @@ import {
 } from '../lib/position-service';
 import type {
   Position,
-  PositionWithMetrics,
   CreatePositionInput,
   UpdatePositionInput,
-  Transaction,
 } from '../lib/types';
 
 // ============================================================================
@@ -141,34 +140,64 @@ export function usePositionCount(portfolioId: string) {
  */
 export function useCreatePosition() {
   const queryClient = useQueryClient();
+  const cacheManager = new CacheManager(queryClient);
 
   return useMutation({
     mutationFn: (input: CreatePositionInput) => createPosition(input),
-    onSuccess: (newPosition, variables) => {
-      // Invalidate and refetch positions for the portfolio
+    // Optimistic update
+    onMutate: async (newPositionInput) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ 
+        queryKey: positionKeys.byPortfolio(newPositionInput.portfolio_id) 
+      });
+
+      // Snapshot the previous value
+      const previousPositions = queryClient.getQueryData<Position[]>(
+        positionKeys.byPortfolio(newPositionInput.portfolio_id)
+      );
+
+      // Create optimistic position object
+      const optimisticPosition: Position = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        portfolio_id: newPositionInput.portfolio_id,
+        symbol: newPositionInput.symbol,
+        name: newPositionInput.name,
+        quantity: newPositionInput.quantity,
+        average_cost: newPositionInput.purchase_price,
+        total_invested: newPositionInput.quantity * newPositionInput.purchase_price,
+        current_price: newPositionInput.current_price,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Optimistically update the cache
+      cacheManager.optimistic.optimisticallyAddPosition(optimisticPosition);
+
+      return { previousPositions };
+    },
+    onSuccess: (newPosition, variables, _context) => {
+      // Replace optimistic update with real data
+      cacheManager.optimistic.optimisticallyAddPosition(newPosition);
+      
+      // Invalidate related queries
+      cacheManager.invalidation.invalidatePositionData(newPosition.id, variables.portfolio_id);
+    },
+    onError: (error, variables, context) => {
+      // Rollback optimistic update
+      if (context?.previousPositions) {
+        queryClient.setQueryData(
+          positionKeys.byPortfolio(variables.portfolio_id), 
+          context.previousPositions
+        );
+      }
+      
+      console.error('Failed to create position:', error);
+    },
+    // Always refetch after error or success
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({
         queryKey: positionKeys.byPortfolio(variables.portfolio_id),
       });
-      queryClient.invalidateQueries({
-        queryKey: positionKeys.withMetrics(variables.portfolio_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: positionKeys.count(variables.portfolio_id),
-      });
-      
-      // Invalidate recent transactions
-      queryClient.invalidateQueries({
-        queryKey: positionKeys.recentTransactions(),
-      });
-
-      // Add the new position to the cache
-      queryClient.setQueryData(
-        positionKeys.byId(newPosition.id),
-        newPosition
-      );
-    },
-    onError: (error) => {
-      console.error('Failed to create position:', error);
     },
   });
 }
@@ -178,33 +207,56 @@ export function useCreatePosition() {
  */
 export function useUpdatePosition() {
   const queryClient = useQueryClient();
+  const cacheManager = new CacheManager(queryClient);
 
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdatePositionInput }) =>
       updatePosition(id, input),
-    onSuccess: (updatedPosition, variables) => {
-      // Update the position in cache
-      queryClient.setQueryData(
-        positionKeys.byId(variables.id),
-        updatedPosition
-      );
+    // Optimistic update
+    onMutate: async ({ id, input }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: positionKeys.byId(id) });
 
-      // Invalidate related queries
-      queryClient.invalidateQueries({
-        queryKey: positionKeys.byPortfolio(updatedPosition.portfolio_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: positionKeys.withMetrics(updatedPosition.portfolio_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: positionKeys.transactions(variables.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: positionKeys.recentTransactions(),
-      });
+      // Snapshot the previous value
+      const previousPosition = queryClient.getQueryData<Position>(positionKeys.byId(id));
+
+      // Create optimistic updated position
+      if (previousPosition) {
+        const optimisticPosition: Position = {
+          ...previousPosition,
+          ...input,
+          updated_at: new Date().toISOString(),
+        };
+
+        // Optimistically update the cache
+        cacheManager.optimistic.optimisticallyUpdatePosition(optimisticPosition);
+      }
+
+      return { previousPosition };
     },
-    onError: (error) => {
+    onSuccess: (updatedPosition, variables, _context) => {
+      // Update with real data
+      cacheManager.optimistic.optimisticallyUpdatePosition(updatedPosition);
+      
+      // Invalidate related queries
+      cacheManager.invalidation.invalidatePositionData(variables.id, updatedPosition.portfolio_id);
+    },
+    onError: (error, variables, context) => {
+      // Rollback optimistic update
+      if (context?.previousPosition) {
+        queryClient.setQueryData(positionKeys.byId(variables.id), context.previousPosition);
+      }
+      
       console.error('Failed to update position:', error);
+    },
+    // Always refetch after error or success
+    onSettled: (data, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: positionKeys.byId(variables.id) });
+      if (data) {
+        queryClient.invalidateQueries({
+          queryKey: positionKeys.byPortfolio(data.portfolio_id),
+        });
+      }
     },
   });
 }
@@ -214,22 +266,43 @@ export function useUpdatePosition() {
  */
 export function useDeletePosition() {
   const queryClient = useQueryClient();
+  const cacheManager = new CacheManager(queryClient);
 
   return useMutation({
     mutationFn: (id: string) => deletePosition(id),
-    onSuccess: (_, deletedId) => {
-      // Remove the position from cache
-      queryClient.removeQueries({
-        queryKey: positionKeys.byId(deletedId),
-      });
+    // Optimistic update
+    onMutate: async (deletedId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: positionKeys.byId(deletedId) });
 
-      // Invalidate all position-related queries
-      queryClient.invalidateQueries({
-        queryKey: positionKeys.all,
-      });
+      // Snapshot the previous value
+      const previousPosition = queryClient.getQueryData<Position>(positionKeys.byId(deletedId));
+
+      // Optimistically remove the position
+      if (previousPosition) {
+        cacheManager.optimistic.optimisticallyRemovePosition(deletedId, previousPosition.portfolio_id);
+      }
+
+      return { previousPosition };
     },
-    onError: (error) => {
+    onSuccess: (_, deletedId, context) => {
+      // Invalidate all related data
+      if (context?.previousPosition) {
+        cacheManager.invalidation.invalidatePositionData(deletedId, context.previousPosition.portfolio_id);
+      }
+    },
+    onError: (error, deletedId, context) => {
+      // Rollback optimistic update
+      if (context?.previousPosition) {
+        queryClient.setQueryData(positionKeys.byId(deletedId), context.previousPosition);
+        cacheManager.optimistic.optimisticallyAddPosition(context.previousPosition);
+      }
+      
       console.error('Failed to delete position:', error);
+    },
+    // Always refetch after error or success
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: positionKeys.all });
     },
   });
 }

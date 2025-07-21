@@ -141,3 +141,20 @@ export {
   isSymbolExistsInPortfolio,
   getPositionCount
 } from './position-service';
+
+// Export cache management utilities
+export {
+  CacheInvalidationManager,
+  OptimisticUpdateManager,
+  CachePersistenceManager,
+  RealTimeUpdateManager,
+  CacheManager
+} from './cache-utils';
+
+// Export data synchronization utilities
+export {
+  RealTimeSubscriptionManager,
+  OfflineSyncManager,
+  BackgroundSyncManager,
+  DataSyncManager
+} from './data-sync';
