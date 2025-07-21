@@ -1,261 +1,215 @@
 /**
- * Transaction History Component - Shows audit trail of buy/sell operations
+ * Transaction History Component
+ * Shows recent transactions with filtering and pagination
  */
 
-import React, { useState, useMemo } from 'react';
-import { format } from 'date-fns';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../../../components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../../components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../../components/ui/select';
-import { Input } from '../../../components/ui/input';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Separator } from '../../../components/ui/separator';
-import {
-  useTransactions,
-  useTransactionsByPosition,
-  useTransactionsByPortfolio,
-} from '../hooks/useTransactions';
-import type { TransactionQueryParams } from '../lib/transaction-service';
-import type { TransactionType } from '../lib/types';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Activity, Search, Filter, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { useRecentTransactions } from '../hooks/useTransactions';
+import { TransactionType } from '../lib/types';
+import type { Transaction } from '../lib/types';
 
-// ============================================================================
-// INTERFACES
-// ============================================================================
+interface TransactionWithDetails extends Transaction {
+  position?: {
+    symbol: string;
+    name: string;
+    portfolio?: {
+      name: string;
+      asset_type: string;
+    };
+  };
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+interface TransactionItemProps {
+  transaction: TransactionWithDetails;
+}
+
+function TransactionItem({ transaction }: TransactionItemProps) {
+  const isBuy = transaction.type === TransactionType.BUY;
+  const totalValue = transaction.quantity * transaction.price;
+
+  return (
+    <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-full ${
+          isBuy ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'
+        }`}>
+          {isBuy ? (
+            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+          ) : (
+            <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+          )}
+        </div>
+        
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              {isBuy ? 'Bought' : 'Sold'} {transaction.quantity} shares
+            </span>
+            <Badge variant={isBuy ? 'default' : 'secondary'}>
+              {transaction.type}
+            </Badge>
+          </div>
+          
+          {transaction.position && (
+            <div className="text-sm text-muted-foreground">
+              {transaction.position.symbol} - {transaction.position.name}
+              {transaction.position.portfolio && (
+                <span className="ml-2">
+                  in {transaction.position.portfolio.name}
+                </span>
+              )}
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+            <Calendar className="h-3 w-3" />
+            <span>{formatDate(transaction.transaction_date)}</span>
+            <span>{formatTime(transaction.transaction_date)}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="text-right">
+        <div className="font-medium">
+          {formatCurrency(transaction.price)} per share
+        </div>
+        <div className={`text-sm ${
+          isBuy ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+        }`}>
+          {isBuy ? '+' : '-'}{formatCurrency(totalValue)}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface TransactionHistoryProps {
-  positionId?: string;
-  portfolioId?: string;
+  limit?: number;
   showFilters?: boolean;
-  maxHeight?: string;
-  pageSize?: number;
+  className?: string;
 }
 
-interface TransactionFilters {
-  search: string;
-  transactionType: TransactionType | 'all';
-  startDate: string;
-  endDate: string;
-  sortBy: 'transaction_date' | 'created_at' | 'quantity' | 'price';
-  sortOrder: 'asc' | 'desc';
-}
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
-export function TransactionHistory({
-  positionId,
-  portfolioId,
-  showFilters = true,
-  maxHeight = '600px',
-  pageSize = 20,
+export function TransactionHistory({ 
+  limit = 10, 
+  showFilters = true, 
+  className 
 }: TransactionHistoryProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filters, setFilters] = useState<TransactionFilters>({
-    search: '',
-    transactionType: 'all',
-    startDate: '',
-    endDate: '',
-    sortBy: 'transaction_date',
-    sortOrder: 'desc',
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [displayLimit, setDisplayLimit] = useState(limit);
+
+  const { data: transactions = [], isLoading, error } = useRecentTransactions(displayLimit);
+
+  // Filter transactions based on search and type
+  const filteredTransactions = (transactions as TransactionWithDetails[]).filter((transaction) => {
+    const matchesSearch = !searchTerm || 
+      (transaction.position?.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       transaction.position?.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesType = typeFilter === 'all' || transaction.type === typeFilter;
+    
+    return matchesSearch && matchesType;
   });
 
-  // Build query parameters
-  const queryParams: TransactionQueryParams = useMemo(() => {
-    const params: TransactionQueryParams = {
-      page: currentPage,
-      limit: pageSize,
-      sort_by: filters.sortBy,
-      sort_order: filters.sortOrder,
-    };
-
-    if (positionId) {
-      params.position_id = positionId;
-    }
-
-    if (portfolioId) {
-      params.portfolio_id = portfolioId;
-    }
-
-    if (filters.search) {
-      params.search = filters.search;
-    }
-
-    if (filters.transactionType !== 'all') {
-      params.transaction_type = filters.transactionType;
-    }
-
-    if (filters.startDate) {
-      params.start_date = filters.startDate;
-    }
-
-    if (filters.endDate) {
-      params.end_date = filters.endDate;
-    }
-
-    return params;
-  }, [positionId, portfolioId, currentPage, pageSize, filters]);
-
-  // Use appropriate hook based on scope
-  const transactionsQuery = positionId
-    ? useTransactionsByPosition(positionId)
-    : portfolioId
-    ? useTransactionsByPortfolio(portfolioId)
-    : useTransactions(queryParams);
-
-  // For position and portfolio specific queries, we need to handle filtering client-side
-  const filteredTransactions = useMemo(() => {
-    if (positionId || portfolioId) {
-      let transactions = transactionsQuery.data || [];
-
-      // Apply client-side filtering for position/portfolio specific queries
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        transactions = transactions.filter(
-          (t) =>
-            t.position?.symbol.toLowerCase().includes(searchLower) ||
-            t.position?.name.toLowerCase().includes(searchLower)
-        );
-      }
-
-      if (filters.transactionType !== 'all') {
-        transactions = transactions.filter((t) => t.type === filters.transactionType);
-      }
-
-      if (filters.startDate) {
-        transactions = transactions.filter(
-          (t) => new Date(t.transaction_date) >= new Date(filters.startDate)
-        );
-      }
-
-      if (filters.endDate) {
-        transactions = transactions.filter(
-          (t) => new Date(t.transaction_date) <= new Date(filters.endDate)
-        );
-      }
-
-      // Apply sorting
-      transactions.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
-
-        switch (filters.sortBy) {
-          case 'transaction_date':
-            aValue = new Date(a.transaction_date);
-            bValue = new Date(b.transaction_date);
-            break;
-          case 'created_at':
-            aValue = new Date(a.created_at);
-            bValue = new Date(b.created_at);
-            break;
-          case 'quantity':
-            aValue = a.quantity;
-            bValue = b.quantity;
-            break;
-          case 'price':
-            aValue = a.price;
-            bValue = b.price;
-            break;
-          default:
-            aValue = new Date(a.transaction_date);
-            bValue = new Date(b.transaction_date);
-        }
-
-        if (filters.sortOrder === 'asc') {
-          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-        } else {
-          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-        }
-      });
-
-      return transactions;
-    }
-
-    return transactionsQuery.data?.transactions || [];
-  }, [transactionsQuery.data, filters, positionId, portfolioId]);
-
-  const totalTransactions = positionId || portfolioId 
-    ? filteredTransactions.length 
-    : transactionsQuery.data?.total || 0;
-
-  const handleFilterChange = (key: keyof TransactionFilters, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(1); // Reset to first page when filtering
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      search: '',
-      transactionType: 'all',
-      startDate: '',
-      endDate: '',
-      sortBy: 'transaction_date',
-      sortOrder: 'desc',
-    });
-    setCurrentPage(1);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
-  };
-
-  const getTransactionBadgeVariant = (type: TransactionType) => {
-    return type === 'BUY' ? 'default' : 'destructive';
-  };
-
-  if (transactionsQuery.isLoading) {
+  if (isLoading) {
     return (
-      <Card>
+      <Card className={className}>
         <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>Loading transaction history...</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Recent Transactions
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded animate-pulse w-32" />
+                    <div className="h-3 bg-muted rounded animate-pulse w-24" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded animate-pulse w-20" />
+                  <div className="h-3 bg-muted rounded animate-pulse w-16" />
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (transactionsQuery.isError) {
+  if (error) {
     return (
-      <Card>
+      <Card className={className}>
         <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>Error loading transaction history</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Recent Transactions
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-red-600">
-            Failed to load transaction history. Please try again.
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Failed to load transactions</p>
+            <p className="text-sm text-red-600 mt-2">{error.message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Recent Transactions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No transactions yet</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Start by adding positions to your portfolios
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -263,211 +217,68 @@ export function TransactionHistory({
   }
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
-        <CardTitle>Transaction History</CardTitle>
-        <CardDescription>
-          {totalTransactions > 0
-            ? `Showing ${filteredTransactions.length} of ${totalTransactions} transactions`
-            : 'No transactions found'}
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Recent Transactions
+          </CardTitle>
+          {transactions.length > 0 && (
+            <Badge variant="secondary">
+              {filteredTransactions.length} of {transactions.length}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
+      
       <CardContent>
         {showFilters && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Search</label>
-                <Input
-                  placeholder="Search by symbol or name..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-2 block">Transaction Type</label>
-                <Select
-                  value={filters.transactionType}
-                  onValueChange={(value) => handleFilterChange('transactionType', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="BUY">Buy</SelectItem>
-                    <SelectItem value="SELL">Sell</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Start Date</label>
-                <Input
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">End Date</label>
-                <Input
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                />
-              </div>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by symbol or name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Sort by:</label>
-                <Select
-                  value={filters.sortBy}
-                  onValueChange={(value) => handleFilterChange('sortBy', value)}
-                >
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="transaction_date">Transaction Date</SelectItem>
-                    <SelectItem value="created_at">Created Date</SelectItem>
-                    <SelectItem value="quantity">Quantity</SelectItem>
-                    <SelectItem value="price">Price</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Order:</label>
-                <Select
-                  value={filters.sortOrder}
-                  onValueChange={(value) => handleFilterChange('sortOrder', value)}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="desc">Newest First</SelectItem>
-                    <SelectItem value="asc">Oldest First</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button variant="outline" onClick={clearFilters}>
-                Clear Filters
-              </Button>
-            </div>
-
-            <Separator className="mb-6" />
-          </>
-        )}
-
-        {filteredTransactions.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No transactions found matching your criteria.
-          </div>
-        ) : (
-          <div style={{ maxHeight, overflowY: 'auto' }}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  {!positionId && <TableHead>Asset</TableHead>}
-                  {!positionId && !portfolioId && <TableHead>Portfolio</TableHead>}
-                  <TableHead className="text-right">Quantity</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Total Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {format(new Date(transaction.transaction_date), 'MMM dd, yyyy')}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {format(new Date(transaction.transaction_date), 'HH:mm')}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getTransactionBadgeVariant(transaction.type)}>
-                        {transaction.type}
-                      </Badge>
-                    </TableCell>
-                    {!positionId && (
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{transaction.position?.symbol}</span>
-                          <span className="text-xs text-gray-500">
-                            {transaction.position?.name}
-                          </span>
-                        </div>
-                      </TableCell>
-                    )}
-                    {!positionId && !portfolioId && (
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {transaction.position?.portfolio?.name}
-                          </span>
-                          <span className="text-xs text-gray-500 capitalize">
-                            {transaction.position?.portfolio?.asset_type?.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right font-mono">
-                      {transaction.quantity.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatCurrency(transaction.price)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-medium">
-                      {formatCurrency(transaction.quantity * transaction.price)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-full sm:w-40">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="BUY">Buy Orders</SelectItem>
+                <SelectItem value="SELL">Sell Orders</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )}
 
-        {/* Pagination for general transactions (not position/portfolio specific) */}
-        {!positionId && !portfolioId && totalTransactions > pageSize && (
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-gray-500">
-              Showing {(currentPage - 1) * pageSize + 1} to{' '}
-              {Math.min(currentPage * pageSize, totalTransactions)} of {totalTransactions}{' '}
-              transactions
+        <div className="space-y-3">
+          {filteredTransactions.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No transactions match your filters</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm">
-                Page {currentPage} of {Math.ceil(totalTransactions / pageSize)}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-                disabled={currentPage >= Math.ceil(totalTransactions / pageSize)}
-              >
-                Next
-              </Button>
-            </div>
+          ) : (
+            filteredTransactions.map((transaction) => (
+              <TransactionItem key={transaction.id} transaction={transaction as TransactionWithDetails} />
+            ))
+          )}
+        </div>
+
+        {transactions.length >= displayLimit && (
+          <div className="flex justify-center mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setDisplayLimit(prev => prev + 10)}
+            >
+              Load More Transactions
+            </Button>
           </div>
         )}
       </CardContent>

@@ -78,7 +78,7 @@
   - Create transaction filtering and search functionality
   - _Requirements: 3.6, 4.5_
 
-- [ ] 10. Create dashboard with analytics and visualizations
+- [x] 10. Create dashboard with analytics and visualizations
 
   - Build dashboard overview page with portfolio summaries
   - Implement asset allocation pie chart using Recharts
