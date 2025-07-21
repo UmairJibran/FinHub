@@ -5,3 +5,5 @@ export * from './DeletePortfolioDialog';
 export * from './PositionForm';
 export * from './PositionList';
 export * from './DeletePositionDialog';
+export * from './TransactionHistory';
+export * from './TransactionForm';

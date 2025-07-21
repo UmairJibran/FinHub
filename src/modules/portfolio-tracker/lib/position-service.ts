@@ -23,6 +23,10 @@ import {
   validatePositionUpdate,
   calculatePositionUpdateImpact,
 } from './cost-basis-calculator';
+import {
+  createPositionCreationTransaction,
+  createPositionUpdateTransactions,
+} from './transaction-helpers';
 
 // ============================================================================
 // POSITION CRUD OPERATIONS
@@ -216,23 +220,14 @@ export async function createPosition(input: CreatePositionInput): Promise<Positi
         throw new Error(`Failed to update existing position: ${updateError.message}`);
       }
 
-      // Create transaction record
-      transactionData = {
-        position_id: existingPosition.id,
-        type: 'BUY',
-        quantity: input.quantity,
-        price: input.purchase_price,
-        transaction_date: new Date().toISOString(),
-      };
-
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert(transactionData);
-
-      if (transactionError) {
-        console.error('Failed to create transaction record:', transactionError);
-        // Don't throw here as the position was already updated
-      }
+      // Create automatic transaction record
+      await createPositionUpdateTransactions(
+        existingPosition.id,
+        existingPosition.quantity,
+        newQuantity,
+        existingPosition.average_cost,
+        input.purchase_price
+      );
 
       console.log('Updated existing position:', updatedPosition);
       return updatedPosition;
@@ -260,23 +255,12 @@ export async function createPosition(input: CreatePositionInput): Promise<Positi
         throw new Error(`Failed to create position: ${createError.message}`);
       }
 
-      // Create initial transaction record
-      transactionData = {
-        position_id: newPosition.id,
-        type: 'BUY',
-        quantity: input.quantity,
-        price: input.purchase_price,
-        transaction_date: new Date().toISOString(),
-      };
-
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert(transactionData);
-
-      if (transactionError) {
-        console.error('Failed to create transaction record:', transactionError);
-        // Don't throw here as the position was already created
-      }
+      // Create initial automatic transaction record
+      await createPositionCreationTransaction(
+        newPosition.id,
+        input.quantity,
+        input.purchase_price
+      );
 
       console.log('Created new position:', newPosition);
       return newPosition;
@@ -343,30 +327,15 @@ export async function updatePosition(
       updateData.average_cost = impact.newAverageCost;
       updateData.total_invested = impact.newTotalInvested;
 
-      // Create transaction record for the change
+      // Create automatic transaction record for the change
       if (impact.quantityChange !== 0) {
-        const transactionType: TransactionType = impact.quantityChange > 0 ? 'BUY' : 'SELL';
-        const transactionQuantity = Math.abs(impact.quantityChange);
-        const transactionPrice = impact.quantityChange > 0 
-          ? input.purchase_price || currentPosition.average_cost
-          : currentPosition.average_cost;
-
-        const transactionData: TransactionInsert = {
-          position_id: id,
-          type: transactionType,
-          quantity: transactionQuantity,
-          price: transactionPrice,
-          transaction_date: new Date().toISOString(),
-        };
-
-        const { error: transactionError } = await supabase
-          .from('transactions')
-          .insert(transactionData);
-
-        if (transactionError) {
-          console.error('Failed to create transaction record:', transactionError);
-          // Continue with position update even if transaction fails
-        }
+        await createPositionUpdateTransactions(
+          id,
+          currentPosition.quantity,
+          input.quantity,
+          currentPosition.average_cost,
+          input.purchase_price
+        );
       }
     }
 
