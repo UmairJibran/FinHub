@@ -112,14 +112,19 @@
   - Create data invalidation strategies for real-time updates
   - _Requirements: 7.1, 7.5_
 
-- [ ] 14. Add comprehensive testing suite
+- [x] 14. Miscellaneous Items
 
-  - Set up testing environment with Vitest and React Testing Library
-  - Write unit tests for utility functions and cost basis calculations
-  - Create component tests for all major UI components
-  - Implement integration tests for authentication and CRUD operations
-  - Add end-to-end tests for critical user journeys
-  - _Requirements: 3.4, 4.2, 4.3_
+  - Create basic user level settings, with one setting that let the user select their currency, which should be reflected across the entire application, but user should be able to set the currency of a specific portfolio.
+  - User Sign Up flow (google/password)
+  - Change Name in settings
+  - Fix Components in Dark Mode
+  - Reset forgotten password
+  - Change password in settings
+  - Each Transaction should be it's own entity
+  - Current price shall not be asked when adding a position
+  - There should be a new page where a user will have option to update the current price of the assets (stock/mf/crypto etc)
+  - That page should only show all the assets held by the specific user so they can easily update the prices (the prices should however be stored globally so they are reflected for all the users)
+  - Visit the entire app and make sure there are no empty/non attempted pages (either remove those, or populate them with items that makes sense)
 
 - [ ] 15. Implement security measures and data protection
 
@@ -128,6 +133,8 @@
   - Add rate limiting considerations for API calls
   - Ensure proper CORS configuration for production
   - Test Row Level Security policies thoroughly
+  - Remove all consoles
+  - Clean Up, remove all the code (functions/files/packages/styles) that are not used anywhere
   - _Requirements: 7.2, 7.3, 7.4_
 
 - [ ] 16. Performance optimization and production readiness
@@ -140,9 +147,19 @@
   - _Requirements: 5.8, 6.4_
 
 - [ ] 17. Final integration and user acceptance testing
+
   - Perform end-to-end testing of all user workflows
   - Test cross-browser compatibility and mobile responsiveness
   - Validate all requirements against implemented functionality
   - Perform security testing and vulnerability assessment
   - Conduct performance testing under load
   - _Requirements: All requirements validation_
+
+- [ ] 18. Add comprehensive testing suite
+
+  - Set up testing environment with Vitest and React Testing Library
+  - Write unit tests for utility functions and cost basis calculations
+  - Create component tests for all major UI components
+  - Implement integration tests for authentication and CRUD operations
+  - Add end-to-end tests for critical user journeys
+  - _Requirements: 3.4, 4.2, 4.3_

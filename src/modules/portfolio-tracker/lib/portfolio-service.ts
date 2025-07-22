@@ -254,6 +254,7 @@ export async function createPortfolio(
     name: input.name.trim(),
     description: input.description?.trim() || null,
     asset_type: input.asset_type,
+    currency: input.currency || 'USD',
   };
 
   const { data, error } = await supabase

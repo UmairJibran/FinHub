@@ -10,7 +10,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { Loader2, Plus, Edit3 } from 'lucide-react';
+import { Loader2, Plus, Edit3, Info } from 'lucide-react';
 import { CreatePositionSchema, UpdatePositionSchema } from '../lib/schemas';
 import type { Position, CreatePositionInput, UpdatePositionInput } from '../lib/types';
 import { z } from 'zod';
@@ -60,7 +60,6 @@ export function PositionForm({
       name: '',
       quantity: 0,
       purchase_price: 0,
-      current_price: undefined,
     },
   });
 
@@ -78,7 +77,6 @@ export function PositionForm({
         setValue('name', position.name);
         setValue('quantity', position.quantity);
         setValue('purchase_price', position.average_cost);
-        setValue('current_price', position.current_price || undefined);
       } else {
         reset({
           portfolio_id: portfolioId,
@@ -86,7 +84,6 @@ export function PositionForm({
           name: '',
           quantity: 0,
           purchase_price: 0,
-          current_price: undefined,
         });
       }
     }
@@ -120,7 +117,6 @@ export function PositionForm({
           name: data.name,
           quantity: data.quantity,
           purchase_price: data.purchase_price,
-          current_price: data.current_price,
         };
 
         await onSubmit(createData);
@@ -161,39 +157,19 @@ export function PositionForm({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            {/* Symbol */}
-            <div className="space-y-2">
-              <Label htmlFor="symbol">Symbol *</Label>
-              <Input
-                id="symbol"
-                placeholder="e.g., AAPL, BTC"
-                {...register('symbol')}
-                disabled={isSubmitting || isLoading}
-                className={errors.symbol ? 'border-red-500' : ''}
-              />
-              {errors.symbol && (
-                <p className="text-sm text-red-500">{errors.symbol.message}</p>
-              )}
-            </div>
-
-            {/* Current Price */}
-            <div className="space-y-2">
-              <Label htmlFor="current_price">Current Price</Label>
-              <Input
-                id="current_price"
-                type="number"
-                step="0.00000001"
-                min="0"
-                placeholder="0.00"
-                {...register('current_price', { valueAsNumber: true })}
-                disabled={isSubmitting || isLoading}
-                className={errors.current_price ? 'border-red-500' : ''}
-              />
-              {errors.current_price && (
-                <p className="text-sm text-red-500">{errors.current_price.message}</p>
-              )}
-            </div>
+          {/* Symbol */}
+          <div className="space-y-2">
+            <Label htmlFor="symbol">Symbol *</Label>
+            <Input
+              id="symbol"
+              placeholder="e.g., AAPL, BTC"
+              {...register('symbol')}
+              disabled={isSubmitting || isLoading}
+              className={errors.symbol ? 'border-red-500' : ''}
+            />
+            {errors.symbol && (
+              <p className="text-sm text-red-500">{errors.symbol.message}</p>
+            )}
           </div>
 
           {/* Asset Name */}
@@ -253,13 +229,13 @@ export function PositionForm({
 
           {/* Investment Summary */}
           {totalInvestment > 0 && (
-            <Card className="bg-muted/50">
+            <Card className="bg-muted/50 dark:bg-muted/20">
               <CardContent className="pt-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium dark:text-slate-100">
                     {isEditing ? 'Additional Investment:' : 'Total Investment:'}
                   </span>
-                  <span className="text-lg font-semibold">
+                  <span className="text-lg font-semibold dark:text-white">
                     ${totalInvestment.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -267,8 +243,8 @@ export function PositionForm({
                   </span>
                 </div>
                 {isEditing && position && (
-                  <div className="mt-2 pt-2 border-t">
-                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                  <div className="mt-2 pt-2 border-t dark:border-slate-700">
+                    <div className="flex justify-between items-center text-sm text-muted-foreground dark:text-slate-300">
                       <span>Current Total Invested:</span>
                       <span>
                         ${position.total_invested.toLocaleString(undefined, {
@@ -282,6 +258,14 @@ export function PositionForm({
               </CardContent>
             </Card>
           )}
+          
+          {/* Note about current price */}
+          <div className="flex items-start gap-2 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/30 p-3 rounded-md dark:text-blue-100">
+            <Info className="h-5 w-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+            <p>
+              Current market prices can be updated on the Asset Prices page after adding this position.
+            </p>
+          </div>
 
           {/* Form Actions */}
           <div className="flex justify-end gap-3 pt-4">

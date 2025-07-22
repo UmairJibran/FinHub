@@ -22,6 +22,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const shouldShowSidebar = isAuthenticated && (
     location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/portfolios') ||
+    location.pathname.startsWith('/asset-prices') ||
     location.pathname.startsWith('/analytics') ||
     location.pathname.startsWith('/transactions') ||
     location.pathname.startsWith('/settings')
@@ -31,6 +32,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const shouldShowBottomNav = isAuthenticated && (
     location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/portfolios') ||
+    location.pathname.startsWith('/asset-prices') ||
     location.pathname.startsWith('/analytics') ||
     location.pathname.startsWith('/transactions') ||
     location.pathname.startsWith('/settings')
@@ -57,7 +59,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}
         
         {/* Main content area */}
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col ${shouldShowSidebar ? 'lg:ml-64' : ''}`}>
           {/* Mobile sidebar toggle for portfolio pages - only show if no bottom nav */}
           {shouldShowSidebar && !shouldShowBottomNav && (
             <div className="lg:hidden border-b p-4">

@@ -226,16 +226,20 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
         <div className="text-center text-sm text-gray-600 dark:text-gray-400">
           <p>
             Don't have an account?{' '}
-            <button
-              type="button"
+            <a
+              href="/auth/signup"
               className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-              onClick={() => {
-                // TODO: Implement sign up functionality or navigate to sign up page
-                console.log('Sign up clicked - implement navigation');
-              }}
             >
               Sign up
-            </button>
+            </a>
+          </p>
+          <p className="mt-2">
+            <a
+              href="/auth/reset-password"
+              className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+            >
+              Forgot your password?
+            </a>
           </p>
         </div>
       </div>

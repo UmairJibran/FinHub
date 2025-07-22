@@ -28,6 +28,8 @@ import {
 import { PortfolioFormSchema } from '../lib/schemas';
 import { AssetType, AssetTypeLabels } from '../lib/types';
 import type { Portfolio, PortfolioFormData } from '../lib/types';
+import { SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currency-config';
+import { useAuth } from '@/hooks/useAuth';
 
 // ============================================================================
 // TYPES
@@ -53,6 +55,7 @@ export function PortfolioForm({
   error
 }: PortfolioFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { profile } = useAuth();
   const isEditing = !!portfolio;
 
   const form = useForm<PortfolioFormData>({
@@ -61,6 +64,7 @@ export function PortfolioForm({
       name: portfolio?.name || '',
       description: portfolio?.description || '',
       asset_type: portfolio?.asset_type || AssetType.STOCKS,
+      currency: portfolio?.currency || profile?.preferred_currency || DEFAULT_CURRENCY,
     },
   });
 
@@ -71,9 +75,10 @@ export function PortfolioForm({
         name: portfolio.name,
         description: portfolio.description || '',
         asset_type: portfolio.asset_type,
+        currency: portfolio.currency || profile?.preferred_currency || DEFAULT_CURRENCY,
       });
     }
-  }, [portfolio, form]);
+  }, [portfolio, form, profile]);
 
   const handleSubmit = async (data: PortfolioFormData) => {
     try {
@@ -114,7 +119,7 @@ export function PortfolioForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Portfolio Name *</FormLabel>
+                  <FormLabel className="dark:text-slate-200">Portfolio Name *</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="e.g., Growth Portfolio, Dividend Stocks"
@@ -133,14 +138,14 @@ export function PortfolioForm({
               name="asset_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Asset Type *</FormLabel>
+                  <FormLabel className="dark:text-slate-200">Asset Type *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                     disabled={isFormLoading}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:border-slate-700">
                         <SelectValue placeholder="Select asset type" />
                       </SelectTrigger>
                     </FormControl>
@@ -157,17 +162,47 @@ export function PortfolioForm({
               )}
             />
 
+            {/* Currency */}
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="dark:text-slate-200">Currency *</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isFormLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="dark:border-slate-700">
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {SUPPORTED_CURRENCIES.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.symbol} {currency.name} ({currency.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Description */}
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel className="dark:text-slate-200">Description</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Optional description of your portfolio strategy or goals"
-                      className="min-h-[100px]"
+                      className="min-h-[100px] dark:border-slate-700"
                       disabled={isFormLoading}
                       {...field}
                     />
@@ -179,7 +214,7 @@ export function PortfolioForm({
 
             {/* Error Message */}
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md">
+              <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md">
                 {error}
               </div>
             )}
@@ -254,7 +289,7 @@ export function AssetTypeSelector({
           `}
         >
           <div className="font-medium">{AssetTypeLabels[type]}</div>
-          <div className="text-sm text-muted-foreground mt-1">
+          <div className="text-sm text-muted-foreground dark:text-slate-400 mt-1">
             {getAssetTypeDescription(type)}
           </div>
         </button>

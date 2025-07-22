@@ -23,6 +23,16 @@ export interface Database {
         Insert: TransactionInsert;
         Update: TransactionUpdate;
       };
+      asset_prices: {
+        Row: AssetPrice;
+        Insert: AssetPriceInsert;
+        Update: AssetPriceUpdate;
+      };
+    };
+    Views: {
+      positions_with_prices: {
+        Row: PositionWithPrice;
+      };
     };
   };
 }
@@ -33,6 +43,7 @@ export interface UserProfile {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
+  preferred_currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -42,12 +53,14 @@ export interface UserProfileInsert {
   email: string;
   full_name?: string | null;
   avatar_url?: string | null;
+  preferred_currency?: string;
 }
 
 export interface UserProfileUpdate {
   email?: string;
   full_name?: string | null;
   avatar_url?: string | null;
+  preferred_currency?: string;
 }
 
 // Portfolio types
@@ -57,6 +70,7 @@ export interface Portfolio {
   name: string;
   description: string | null;
   asset_type: AssetType;
+  currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -66,12 +80,14 @@ export interface PortfolioInsert {
   name: string;
   description?: string | null;
   asset_type: AssetType;
+  currency?: string;
 }
 
 export interface PortfolioUpdate {
   name?: string;
   description?: string | null;
   asset_type?: AssetType;
+  currency?: string;
 }
 
 // Position types
@@ -131,6 +147,38 @@ export interface TransactionUpdate {
   quantity?: number;
   price?: number;
   transaction_date?: string;
+}
+
+// Asset Price types
+export interface AssetPrice {
+  id: string;
+  symbol: string;
+  name: string;
+  current_price: number;
+  currency: string;
+  last_updated: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetPriceInsert {
+  symbol: string;
+  name: string;
+  current_price: number;
+  currency?: string;
+}
+
+export interface AssetPriceUpdate {
+  name?: string;
+  current_price?: number;
+  currency?: string;
+}
+
+// Position with price view type
+export interface PositionWithPrice extends Position {
+  market_price: number | null;
+  price_last_updated: string | null;
+  currency?: string; // Currency from the portfolio
 }
 
 // Enums

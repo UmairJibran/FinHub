@@ -45,6 +45,7 @@ export const PortfolioSchema = z.object({
     .trim()
     .optional(),
   asset_type: AssetTypeSchema,
+  currency: z.string().min(3, 'Currency code is required').max(3, 'Currency code must be 3 characters'),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 });
@@ -127,6 +128,7 @@ export const CreatePortfolioSchema = z.object({
     .optional()
     .or(z.literal('')),
   asset_type: AssetTypeSchema,
+  currency: z.string().min(3, 'Currency code is required').max(3, 'Currency code must be 3 characters').default('USD'),
 });
 
 /**
@@ -175,12 +177,6 @@ export const CreatePositionSchema = z.object({
     .number()
     .positive('Purchase price must be positive')
     .finite('Purchase price must be a valid number'),
-  current_price: z
-    .number()
-    .positive('Current price must be positive')
-    .finite('Current price must be a valid number')
-
-    .optional(),
 });
 
 /**

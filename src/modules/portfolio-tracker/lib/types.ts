@@ -50,6 +50,7 @@ export interface Portfolio {
   name: string;
   description?: string;
   asset_type: AssetType;
+  currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -221,6 +222,7 @@ export interface PortfolioFormData {
   name: string;
   description?: string;
   asset_type: AssetType;
+  currency: string;
 }
 
 /**

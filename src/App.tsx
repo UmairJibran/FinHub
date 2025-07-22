@@ -15,8 +15,11 @@ import ShareAveragingPage from './app/calculators/share-averaging/page';
 import Dashboard from './pages/Dashboard';
 import Portfolios from './pages/Portfolios';
 import PortfolioDetail from './pages/PortfolioDetail';
-// import PortfolioTest from './pages/PortfolioTest';
+import Settings from './pages/Settings';
+import AssetPrices from './pages/AssetPrices';
 import Login from './pages/auth/Login';
+import SignUp from './pages/auth/SignUp';
+import ResetPassword from './pages/auth/ResetPassword';
 import Callback from './pages/auth/Callback';
 
 const queryClient = new QueryClient({
@@ -104,6 +107,22 @@ function App() {
                   </PublicRoute>
                 }
               />
+              <Route
+                path="/auth/signup"
+                element={
+                  <PublicRoute>
+                    <SignUp />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/auth/reset-password"
+                element={
+                  <PublicRoute>
+                    <ResetPassword />
+                  </PublicRoute>
+                }
+              />
               <Route path="/auth/callback" element={<Callback />} />
 
               {/* Protected routes - require authentication */}
@@ -128,6 +147,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <PortfolioDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/asset-prices"
+                element={
+                  <ProtectedRoute>
+                    <AssetPrices />
                   </ProtectedRoute>
                 }
               />

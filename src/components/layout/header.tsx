@@ -9,6 +9,16 @@ export function Header(): JSX.Element {
     const { user, signOut } = useAuth();
     const isAuthenticated = !!user;
     const location = useLocation();
+    
+    // Check if we're on a page that shows the sidebar (which has its own logout)
+    const shouldShowSidebar = isAuthenticated && (
+        location.pathname.startsWith('/dashboard') ||
+        location.pathname.startsWith('/portfolios') ||
+        location.pathname.startsWith('/asset-prices') ||
+        location.pathname.startsWith('/analytics') ||
+        location.pathname.startsWith('/transactions') ||
+        location.pathname.startsWith('/settings')
+    );
 
     const isActive = (path: string) => {
         return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -68,21 +78,25 @@ export function Header(): JSX.Element {
                 <div className="hidden md:flex items-center gap-4">
                     {isAuthenticated ? (
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 text-sm">
-                                <User className="h-4 w-4" />
-                                <span className="text-muted-foreground">
-                                    {user?.email || 'User'}
-                                </span>
-                            </div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={handleLogout}
-                                className="gap-2"
-                            >
-                                <LogOut className="h-4 w-4" />
-                                Logout
-                            </Button>
+                            {!shouldShowSidebar && (
+                                <>
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <User className="h-4 w-4" />
+                                        <span className="text-muted-foreground">
+                                            {user?.email || 'User'}
+                                        </span>
+                                    </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={handleLogout}
+                                        className="gap-2"
+                                    >
+                                        <LogOut className="h-4 w-4" />
+                                        Logout
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <Button asChild variant="default" size="sm">
@@ -149,24 +163,26 @@ export function Header(): JSX.Element {
                                     </div>
                                 </Link>
                                 
-                                <div className="pt-4 border-t">
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                                        <User className="h-4 w-4" />
-                                        {user?.email || 'User'}
+                                {!shouldShowSidebar && (
+                                    <div className="pt-4 border-t">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                                            <User className="h-4 w-4" />
+                                            {user?.email || 'User'}
+                                        </div>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={() => {
+                                                handleLogout();
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            className="gap-2 w-full justify-start"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                            Logout
+                                        </Button>
                                     </div>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        onClick={() => {
-                                            handleLogout();
-                                            setIsMobileMenuOpen(false);
-                                        }}
-                                        className="gap-2 w-full justify-start"
-                                    >
-                                        <LogOut className="h-4 w-4" />
-                                        Logout
-                                    </Button>
-                                </div>
+                                )}
                             </>
                         ) : (
                             <div className="pt-4 border-t">

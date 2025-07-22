@@ -16,6 +16,7 @@ export interface SignInCredentials {
 
 export interface SignUpCredentials extends SignInCredentials {
   fullName?: string;
+  preferredCurrency?: string;
 }
 
 // Re-export UserProfile for convenience
@@ -67,6 +68,7 @@ export class AuthService {
       options: {
         data: {
           full_name: credentials.fullName,
+          preferred_currency: credentials.preferredCurrency || 'USD',
         },
       },
     });
@@ -245,6 +247,7 @@ export class UserProfileService {
     email: string;
     full_name?: string | null;
     avatar_url?: string | null;
+    preferred_currency?: string | null;
   }): Promise<{ profile: UserProfile | null; error: any }> {
     if (!isSupabaseAvailable || !supabase) {
       return {
@@ -274,6 +277,7 @@ export class UserProfileService {
     updates: {
       full_name?: string | null;
       avatar_url?: string | null;
+      preferred_currency?: string;
     }
   ): Promise<{ profile: UserProfile | null; error: any }> {
     if (!isSupabaseAvailable || !supabase) {
