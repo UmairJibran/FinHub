@@ -27,6 +27,7 @@ interface AuthState {
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   updateProfile: (updates: {
     full_name?: string;
     avatar_url?: string;
@@ -200,6 +201,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await AuthService.refreshSession();
     } catch (error) {
       console.error('Error refreshing session:', error);
+    }
+  },
+  
+  // Refresh user data including profile and preferences
+  refreshUser: async () => {
+    try {
+      set({ isLoading: true });
+      const { user } = get();
+      
+      if (!user) {
+        console.warn('Cannot refresh user: No authenticated user');
+        return;
+      }
+      
+      // Refresh the session to get the latest user data
+      await get().refreshSession();
+      
+      // Reload the user profile to get the latest preferences
+      await get().loadUserProfile(user.id);
+      
+      console.log('User data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    } finally {
+      set({ isLoading: false });
     }
   },
 

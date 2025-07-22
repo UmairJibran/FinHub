@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AssetTypeLabels } from '../lib/types';
 import type { PortfolioSummary } from '../lib/types';
+import { formatCurrency } from '@/lib/currency-config';
 
 // ============================================================================
 // TYPES
@@ -57,14 +58,7 @@ export function PortfolioCard({
     ? (portfolio.total_invested / totalPortfolioValue) * 100 
     : 0;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+
 
   const formatPercentage = (percentage: number) => {
     return `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%`;

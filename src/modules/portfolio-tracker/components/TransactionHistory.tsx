@@ -13,6 +13,7 @@ import { Activity, Search, Filter, TrendingUp, TrendingDown, Calendar } from 'lu
 import { useRecentTransactions } from '../hooks/useTransactions';
 import { TransactionType } from '../lib/types';
 import type { Transaction } from '../lib/types';
+import { formatCurrency } from '@/lib/currency-config';
 
 interface TransactionWithDetails extends Transaction {
   position?: {
@@ -25,14 +26,7 @@ interface TransactionWithDetails extends Transaction {
   };
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
+
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);

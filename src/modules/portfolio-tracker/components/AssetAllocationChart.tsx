@@ -9,6 +9,7 @@ import { PieChart as PieChartIcon } from 'lucide-react';
 import { usePortfolioSummaries } from '../hooks/usePortfolios';
 import { AssetType, AssetTypeLabels } from '../lib/types';
 import type { PortfolioSummary } from '../lib/types';
+import { formatCurrency } from '@/lib/currency-config';
 
 interface AssetAllocationData {
   asset_type: AssetType;
@@ -51,14 +52,7 @@ function calculateAssetAllocation(summaries: PortfolioSummary[]): AssetAllocatio
   }));
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+
 
 interface CustomTooltipProps {
   active?: boolean;

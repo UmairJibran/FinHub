@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp } from 'lucide-react';
 import { usePortfolioSummaries } from '../hooks/usePortfolios';
+import { formatCurrency } from '@/lib/currency-config';
 
 // Mock data for performance chart
 // In a real implementation, this would come from an API call with historical data
@@ -57,14 +58,7 @@ const generateMockPerformanceData = (portfolioCount: number) => {
   });
 };
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+
 
 interface CustomTooltipProps {
   active?: boolean;

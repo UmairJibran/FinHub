@@ -16,6 +16,7 @@ import { PositionForm } from '@/modules/portfolio-tracker/components/PositionFor
 import { DeletePositionDialog } from '@/modules/portfolio-tracker/components/DeletePositionDialog';
 import { AssetTypeLabels } from '@/modules/portfolio-tracker/lib/types';
 import type { PositionWithMetrics, CreatePositionInput, UpdatePositionInput } from '@/modules/portfolio-tracker/lib/types';
+import { formatCurrency } from '@/lib/currency-config';
 
 export default function PortfolioDetail() {
   const { portfolioId } = useParams<{ portfolioId: string }>();
@@ -157,14 +158,7 @@ export default function PortfolioDetail() {
   const totalUnrealizedGainLoss = positions.reduce((sum, p) => sum + (p.unrealized_gain_loss || 0), 0);
   const totalGainLossPercentage = totalInvested > 0 ? (totalUnrealizedGainLoss / totalInvested) * 100 : 0;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+
 
   // ============================================================================
   // RENDER

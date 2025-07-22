@@ -17,8 +17,11 @@ function checkSupabaseConfig(): boolean {
 
 /**
  * Custom hook to access authentication functionality using Zustand
+ * 
+ * @param options - Hook options
+ * @param options.refreshOnMount - Whether to refresh user data on component mount (default: false)
  */
-export function useAuth() {
+export function useAuth({ refreshOnMount = false } = {}) {
   const authStore = useAuthStore();
   const isSupabaseConfigured = checkSupabaseConfig();
   
@@ -28,6 +31,13 @@ export function useAuth() {
       authStore.initialize();
     }
   }, [isSupabaseConfigured]);
+  
+  // Refresh user data on mount if requested
+  useEffect(() => {
+    if (refreshOnMount && authStore.user && !authStore.isLoading) {
+      authStore.refreshUser();
+    }
+  }, [refreshOnMount, authStore.user !== null]);
   
   return {
     ...authStore,

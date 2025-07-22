@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import type { PositionWithMetrics } from '../lib/types';
+import { formatCurrency } from '@/lib/currency-config';
 
 // ============================================================================
 // TYPES
@@ -60,14 +61,7 @@ export function DeletePositionDialog({
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
