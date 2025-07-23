@@ -11,9 +11,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
             disableTransitionOnChange
+            forcedTheme="light"
         >
             <AppLayout>
                 {children}
