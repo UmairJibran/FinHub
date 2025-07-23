@@ -30,20 +30,27 @@ export const SECURITY_CONFIG = {
   ALLOWED_ORIGINS: [
     'http://localhost:3000',
     'http://localhost:5173',
-    'https://your-domain.com', // Replace with actual domain
+    'https://localhost:3000',
+    'https://localhost:5173',
+    // Add production domains here
+    ...(import.meta.env.VITE_ALLOWED_ORIGINS?.split(',') || []),
   ],
   
   // Content Security Policy
   CSP_DIRECTIVES: {
     'default-src': ["'self'"],
-    'script-src': ["'self'", "'unsafe-inline'"],
-    'style-src': ["'self'", "'unsafe-inline'"],
-    'img-src': ["'self'", 'data:', 'https:'],
-    'connect-src': ["'self'", 'https://*.supabase.co'],
-    'font-src': ["'self'"],
+    'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // unsafe-eval needed for Vite in dev
+    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+    'img-src': ["'self'", 'data:', 'https:', 'blob:'],
+    'connect-src': ["'self'", 'https://*.supabase.co', 'wss://*.supabase.co'],
+    'font-src': ["'self'", 'https://fonts.gstatic.com'],
     'object-src': ["'none'"],
     'media-src': ["'self'"],
     'frame-src': ["'none'"],
+    'base-uri': ["'self'"],
+    'form-action': ["'self'"],
+    'frame-ancestors': ["'none'"],
+    'upgrade-insecure-requests': import.meta.env.PROD ? [] : undefined,
   },
 } as const;
 
@@ -192,7 +199,7 @@ export function enforceHTTPS(): void {
 // Content Security Policy header generation
 export function generateCSPHeader(): string {
   const directives = Object.entries(SECURITY_CONFIG.CSP_DIRECTIVES)
-    .map(([key, values]) => `${key} ${values.join(' ')}`)
+    .map(([key, values]) => `${key} ${values?.join(' ') || ''}`)
     .join('; ');
   
   return directives;
@@ -211,12 +218,54 @@ export function getSecureCookieOptions(): {
   };
 }
 
+// CORS validation utility
+export function validateCORSOrigin(origin: string): boolean {
+  if (!origin) return false;
+  
+  // Allow localhost in development
+  if (!import.meta.env.PROD && origin.includes('localhost')) {
+    return true;
+  }
+  
+  return SECURITY_CONFIG.ALLOWED_ORIGINS.includes(origin);
+}
+
+// Security headers for API responses
+export function getSecurityHeaders(origin?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    'Content-Security-Policy': generateCSPHeader(),
+  };
+
+  // Add CORS headers if origin is provided and valid
+  if (origin && validateCORSOrigin(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Access-Control-Allow-Credentials'] = 'true';
+    headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
+    headers['Access-Control-Max-Age'] = '86400'; // 24 hours
+  }
+
+  return headers;
+}
+
 // Initialize security measures
 export function initializeSecurity(): void {
   // Enforce HTTPS in production
   if (import.meta.env.PROD) {
     enforceHTTPS();
   }
+  
+  // Set security headers on the document
+  const metaCSP = document.createElement('meta');
+  metaCSP.httpEquiv = 'Content-Security-Policy';
+  metaCSP.content = generateCSPHeader();
+  document.head.appendChild(metaCSP);
   
   // Set up session activity tracking
   const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
@@ -251,6 +300,33 @@ export function initializeSecurity(): void {
         e.preventDefault();
       }
     });
+  }
+  
+  // Initialize security audit logging
+  SecurityAuditLogger.log(SECURITY_EVENTS.SESSION_EXPIRED, {
+    timestamp: Date.now(),
+    userAgent: navigator.userAgent,
+  });
+  
+  // Run security tests in development
+  if (import.meta.env.DEV) {
+    // Run comprehensive security audit
+    import('./security-audit').then(({ runSecurityAudit }) => {
+      runSecurityAudit();
+    });
+    
+    // Run individual tests if enabled
+    if (import.meta.env.VITE_ENABLE_SECURITY_TESTING === 'true') {
+      import('./security-testing').then(({ runSecurityTests }) => {
+        runSecurityTests();
+      });
+    }
+    
+    if (import.meta.env.VITE_ENABLE_RLS_TESTING === 'true') {
+      import('./rls-testing').then(({ runAndLogRLSTests }) => {
+        runAndLogRLSTests();
+      });
+    }
   }
 }
 

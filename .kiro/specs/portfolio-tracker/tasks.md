@@ -126,7 +126,7 @@
   - That page should only show all the assets held by the specific user so they can easily update the prices (the prices should however be stored globally so they are reflected for all the users)
   - Visit the entire app and make sure there are no empty/non attempted pages (either remove those, or populate them with items that makes sense)
 
-- [ ] 15. Implement security measures and data protection
+- [x] 15. Implement security measures and data protection
 
   - Validate and sanitize all user inputs
   - Implement proper error handling that doesn't leak sensitive data

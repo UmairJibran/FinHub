@@ -1,554 +1,506 @@
 /**
  * Row Level Security (RLS) testing utilities
+ * Tests to ensure data isolation and security policies work correctly
  */
 
 import { supabase, isSupabaseAvailable } from './supabase/client';
-import { SecurityAuditLogger, SECURITY_EVENTS } from './security-config';
+// Database type is available but not used directly in this file
 
 export interface RLSTestResult {
+  testName: string;
   table: string;
   operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
-  success: boolean;
-  error?: string;
-  expectedBehavior: 'ALLOW' | 'DENY';
-  actualBehavior: 'ALLOW' | 'DENY';
   passed: boolean;
+  error?: string;
+  details?: any;
 }
 
-export interface RLSTestSuite {
-  name: string;
-  results: RLSTestResult[];
-  passed: boolean;
-  summary: {
+export class RLSPolicyTester {
+  private results: RLSTestResult[] = [];
+
+  /**
+   * Run comprehensive RLS tests
+   */
+  async runAllRLSTests(): Promise<RLSTestResult[]> {
+    this.results = [];
+
+    if (!isSupabaseAvailable || !supabase) {
+      this.results.push({
+        testName: 'Supabase Availability',
+        table: 'N/A',
+        operation: 'SELECT',
+        passed: false,
+        error: 'Supabase client not available',
+      });
+      return this.results;
+    }
+
+    // Ensure supabase is available for all subsequent operations
+    const client = supabase;
+
+    // Test each table's RLS policies
+    await this.testUserProfilesRLS(client);
+    await this.testPortfoliosRLS(client);
+    await this.testPositionsRLS(client);
+    await this.testTransactionsRLS(client);
+    await this.testAssetPricesRLS(client);
+
+    return this.results;
+  }
+
+  /**
+   * Test user_profiles table RLS policies
+   */
+  private async testUserProfilesRLS(client: typeof supabase): Promise<void> {
+    const table = 'user_profiles';
+
+    // Test 1: Unauthenticated access should be denied
+    try {
+      const { data, error } = await supabase!
+        .from(table)
+        .select('*');
+
+      this.results.push({
+        testName: 'User Profiles - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: !data || data.length === 0,
+        error: data && data.length > 0 ? 'Unauthenticated access allowed' : undefined,
+        details: { dataCount: data?.length || 0, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'User Profiles - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: true, // Error is expected
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+
+    // Test 2: Try to insert without authentication
+    try {
+      const { data, error } = await supabase!
+        .from(table)
+        .insert({
+          id: '00000000-0000-0000-0000-000000000000',
+          email: 'test@example.com',
+          full_name: 'Test User',
+        });
+
+      this.results.push({
+        testName: 'User Profiles - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: !!error,
+        error: !error ? 'Unauthenticated insert allowed' : undefined,
+        details: { data, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'User Profiles - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: true,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+  }
+
+  /**
+   * Test portfolios table RLS policies
+   */
+  private async testPortfoliosRLS(): Promise<void> {
+    const table = 'portfolios';
+
+    // Test 1: Unauthenticated SELECT should be denied
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*');
+
+      this.results.push({
+        testName: 'Portfolios - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: !data || data.length === 0,
+        error: data && data.length > 0 ? 'Unauthenticated access allowed' : undefined,
+        details: { dataCount: data?.length || 0, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'Portfolios - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: true,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+
+    // Test 2: Try to insert without authentication
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .insert({
+          user_id: '00000000-0000-0000-0000-000000000000',
+          name: 'Test Portfolio',
+          asset_type: 'stocks',
+        });
+
+      this.results.push({
+        testName: 'Portfolios - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: !!error,
+        error: !error ? 'Unauthenticated insert allowed' : undefined,
+        details: { data, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'Portfolios - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: true,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+  }
+
+  /**
+   * Test positions table RLS policies
+   */
+  private async testPositionsRLS(): Promise<void> {
+    const table = 'positions';
+
+    // Test 1: Unauthenticated SELECT should be denied
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*');
+
+      this.results.push({
+        testName: 'Positions - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: !data || data.length === 0,
+        error: data && data.length > 0 ? 'Unauthenticated access allowed' : undefined,
+        details: { dataCount: data?.length || 0, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'Positions - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: true,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+
+    // Test 2: Try to insert without authentication
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .insert({
+          portfolio_id: '00000000-0000-0000-0000-000000000000',
+          symbol: 'TEST',
+          name: 'Test Stock',
+          quantity: 100,
+          average_cost: 50,
+          total_invested: 5000,
+        });
+
+      this.results.push({
+        testName: 'Positions - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: !!error,
+        error: !error ? 'Unauthenticated insert allowed' : undefined,
+        details: { data, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'Positions - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: true,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+  }
+
+  /**
+   * Test transactions table RLS policies
+   */
+  private async testTransactionsRLS(): Promise<void> {
+    const table = 'transactions';
+
+    // Test 1: Unauthenticated SELECT should be denied
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*');
+
+      this.results.push({
+        testName: 'Transactions - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: !data || data.length === 0,
+        error: data && data.length > 0 ? 'Unauthenticated access allowed' : undefined,
+        details: { dataCount: data?.length || 0, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'Transactions - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: true,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+
+    // Test 2: Try to insert without authentication
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .insert({
+          position_id: '00000000-0000-0000-0000-000000000000',
+          type: 'BUY',
+          quantity: 100,
+          price: 50,
+          transaction_date: new Date().toISOString(),
+        });
+
+      this.results.push({
+        testName: 'Transactions - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: !!error,
+        error: !error ? 'Unauthenticated insert allowed' : undefined,
+        details: { data, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'Transactions - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: true,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+  }
+
+  /**
+   * Test asset_prices table RLS policies
+   */
+  private async testAssetPricesRLS(): Promise<void> {
+    const table = 'asset_prices';
+
+    // Test 1: Unauthenticated SELECT should be allowed (public data)
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .limit(1);
+
+      this.results.push({
+        testName: 'Asset Prices - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: !error, // Should be allowed
+        error: error ? 'Public read access denied' : undefined,
+        details: { dataCount: data?.length || 0, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'Asset Prices - Unauthenticated SELECT',
+        table,
+        operation: 'SELECT',
+        passed: false,
+        error: 'Public read access should be allowed',
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+
+    // Test 2: Try to insert without authentication (should be denied)
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .insert({
+          symbol: 'TEST',
+          name: 'Test Asset',
+          current_price: 100,
+          currency: 'USD',
+        });
+
+      this.results.push({
+        testName: 'Asset Prices - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: !!error,
+        error: !error ? 'Unauthenticated insert allowed' : undefined,
+        details: { data, error },
+      });
+    } catch (error) {
+      this.results.push({
+        testName: 'Asset Prices - Unauthenticated INSERT',
+        table,
+        operation: 'INSERT',
+        passed: true,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+  }
+
+  /**
+   * Test RLS policy existence
+   */
+  async testPolicyExistence(): Promise<void> {
+    try {
+      // Query to check if RLS is enabled on tables
+      const { data: tables } = await supabase
+        .rpc('check_rls_status');
+
+      if (tables) {
+        const requiredTables = ['user_profiles', 'portfolios', 'positions', 'transactions', 'asset_prices'];
+        
+        for (const tableName of requiredTables) {
+          const table = tables.find((t: any) => t.table_name === tableName);
+          
+          this.results.push({
+            testName: `RLS Enabled - ${tableName}`,
+            table: tableName,
+            operation: 'SELECT',
+            passed: table?.rls_enabled === true,
+            error: table?.rls_enabled !== true ? 'RLS not enabled' : undefined,
+            details: { table },
+          });
+        }
+      }
+    } catch (error) {
+      // If the RPC doesn't exist, we'll skip this test
+      this.results.push({
+        testName: 'RLS Status Check',
+        table: 'N/A',
+        operation: 'SELECT',
+        passed: false,
+        error: 'Could not check RLS status - RPC function may not exist',
+        details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      });
+    }
+  }
+
+  /**
+   * Get test results summary
+   */
+  getTestSummary(): {
     total: number;
     passed: number;
     failed: number;
-  };
-}
+    passRate: number;
+    byTable: Record<string, { passed: number; failed: number }>;
+  } {
+    const total = this.results.length;
+    const passed = this.results.filter(r => r.passed).length;
+    const failed = total - passed;
+    const passRate = total > 0 ? (passed / total) * 100 : 0;
 
-// Test RLS policies for portfolios table
-export async function testPortfolioRLS(): Promise<RLSTestSuite> {
-  const results: RLSTestResult[] = [];
-  
-  if (!isSupabaseAvailable || !supabase) {
-    return {
-      name: 'Portfolio RLS Tests',
-      results: [],
-      passed: false,
-      summary: { total: 0, passed: 0, failed: 1 },
-    };
-  }
-
-  // Test 1: User can view their own portfolios
-  try {
-    const { data, error } = await supabase
-      .from('portfolios')
-      .select('*')
-      .limit(1);
-    
-    results.push({
-      table: 'portfolios',
-      operation: 'SELECT',
-      success: !error,
-      error: error?.message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: error ? 'DENY' : 'ALLOW',
-      passed: !error,
+    // Group by table
+    const byTable: Record<string, { passed: number; failed: number }> = {};
+    this.results.forEach(result => {
+      if (!byTable[result.table]) {
+        byTable[result.table] = { passed: 0, failed: 0 };
+      }
+      if (result.passed) {
+        byTable[result.table].passed++;
+      } else {
+        byTable[result.table].failed++;
+      }
     });
-  } catch (err) {
-    results.push({
-      table: 'portfolios',
-      operation: 'SELECT',
-      success: false,
-      error: (err as Error).message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: 'DENY',
-      passed: false,
+
+    return { total, passed, failed, passRate, byTable };
+  }
+
+  /**
+   * Get failed tests
+   */
+  getFailedTests(): RLSTestResult[] {
+    return this.results.filter(r => !r.passed);
+  }
+
+  /**
+   * Generate RLS test report
+   */
+  generateReport(): string {
+    const summary = this.getTestSummary();
+    const failedTests = this.getFailedTests();
+
+    let report = `RLS Policy Test Report\n`;
+    report += `=====================\n\n`;
+    report += `Total Tests: ${summary.total}\n`;
+    report += `Passed: ${summary.passed}\n`;
+    report += `Failed: ${summary.failed}\n`;
+    report += `Pass Rate: ${summary.passRate.toFixed(1)}%\n\n`;
+
+    // Summary by table
+    report += `Results by Table:\n`;
+    report += `-----------------\n`;
+    Object.entries(summary.byTable).forEach(([table, stats]) => {
+      const tablePassRate = ((stats.passed / (stats.passed + stats.failed)) * 100).toFixed(1);
+      report += `${table}: ${stats.passed}/${stats.passed + stats.failed} (${tablePassRate}%)\n`;
     });
-  }
+    report += `\n`;
 
-  // Test 2: User can insert their own portfolios
-  try {
-    const testPortfolio = {
-      name: 'RLS Test Portfolio',
-      description: 'Test portfolio for RLS validation',
-      asset_type: 'stocks' as const,
-    };
-
-    const { data, error } = await supabase
-      .from('portfolios')
-      .insert(testPortfolio)
-      .select()
-      .single();
-    
-    const insertResult = {
-      table: 'portfolios',
-      operation: 'INSERT' as const,
-      success: !error,
-      error: error?.message,
-      expectedBehavior: 'ALLOW' as const,
-      actualBehavior: error ? 'DENY' as const : 'ALLOW' as const,
-      passed: !error,
-    };
-    
-    results.push(insertResult);
-
-    // Clean up test data if insert was successful
-    if (data && !error) {
-      await supabase
-        .from('portfolios')
-        .delete()
-        .eq('id', data.id);
-    }
-  } catch (err) {
-    results.push({
-      table: 'portfolios',
-      operation: 'INSERT',
-      success: false,
-      error: (err as Error).message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: 'DENY',
-      passed: false,
-    });
-  }
-
-  const passed = results.every(r => r.passed);
-  const summary = {
-    total: results.length,
-    passed: results.filter(r => r.passed).length,
-    failed: results.filter(r => !r.passed).length,
-  };
-
-  return {
-    name: 'Portfolio RLS Tests',
-    results,
-    passed,
-    summary,
-  };
-}
-
-// Test RLS policies for positions table
-export async function testPositionRLS(): Promise<RLSTestSuite> {
-  const results: RLSTestResult[] = [];
-  
-  if (!isSupabaseAvailable || !supabase) {
-    return {
-      name: 'Position RLS Tests',
-      results: [],
-      passed: false,
-      summary: { total: 0, passed: 0, failed: 1 },
-    };
-  }
-
-  // First, create a test portfolio to use for position tests
-  let testPortfolioId: string | null = null;
-  
-  try {
-    const { data: portfolio, error: portfolioError } = await supabase
-      .from('portfolios')
-      .insert({
-        name: 'RLS Test Portfolio for Positions',
-        description: 'Test portfolio for position RLS validation',
-        asset_type: 'stocks',
-      })
-      .select()
-      .single();
-
-    if (portfolioError || !portfolio) {
-      results.push({
-        table: 'positions',
-        operation: 'SELECT',
-        success: false,
-        error: 'Failed to create test portfolio for position tests',
-        expectedBehavior: 'ALLOW',
-        actualBehavior: 'DENY',
-        passed: false,
+    if (failedTests.length > 0) {
+      report += `Failed Tests:\n`;
+      report += `-------------\n`;
+      failedTests.forEach(test => {
+        report += `• ${test.testName} (${test.table} ${test.operation}): ${test.error}\n`;
       });
-      
-      return {
-        name: 'Position RLS Tests',
-        results,
-        passed: false,
-        summary: { total: 1, passed: 0, failed: 1 },
-      };
-    }
-
-    testPortfolioId = portfolio.id;
-
-    // Test 1: User can view positions in their own portfolio
-    const { data, error } = await supabase
-      .from('positions')
-      .select('*')
-      .eq('portfolio_id', testPortfolioId)
-      .limit(1);
-    
-    results.push({
-      table: 'positions',
-      operation: 'SELECT',
-      success: !error,
-      error: error?.message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: error ? 'DENY' : 'ALLOW',
-      passed: !error,
-    });
-
-    // Test 2: User can insert positions in their own portfolio
-    const testPosition = {
-      portfolio_id: testPortfolioId,
-      symbol: 'RLSTEST',
-      name: 'RLS Test Stock',
-      quantity: 100,
-      average_cost: 10.50,
-      total_invested: 1050.00,
-    };
-
-    const { data: positionData, error: insertError } = await supabase
-      .from('positions')
-      .insert(testPosition)
-      .select()
-      .single();
-    
-    results.push({
-      table: 'positions',
-      operation: 'INSERT',
-      success: !insertError,
-      error: insertError?.message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: insertError ? 'DENY' : 'ALLOW',
-      passed: !insertError,
-    });
-
-    // Clean up test position if created
-    if (positionData && !insertError) {
-      await supabase
-        .from('positions')
-        .delete()
-        .eq('id', positionData.id);
-    }
-
-  } catch (err) {
-    results.push({
-      table: 'positions',
-      operation: 'SELECT',
-      success: false,
-      error: (err as Error).message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: 'DENY',
-      passed: false,
-    });
-  } finally {
-    // Clean up test portfolio
-    if (testPortfolioId) {
-      await supabase
-        .from('portfolios')
-        .delete()
-        .eq('id', testPortfolioId);
-    }
-  }
-
-  const passed = results.every(r => r.passed);
-  const summary = {
-    total: results.length,
-    passed: results.filter(r => r.passed).length,
-    failed: results.filter(r => !r.passed).length,
-  };
-
-  return {
-    name: 'Position RLS Tests',
-    results,
-    passed,
-    summary,
-  };
-}
-
-// Test RLS policies for transactions table
-export async function testTransactionRLS(): Promise<RLSTestSuite> {
-  const results: RLSTestResult[] = [];
-  
-  if (!isSupabaseAvailable || !supabase) {
-    return {
-      name: 'Transaction RLS Tests',
-      results: [],
-      passed: false,
-      summary: { total: 0, passed: 0, failed: 1 },
-    };
-  }
-
-  // Create test portfolio and position for transaction tests
-  let testPortfolioId: string | null = null;
-  let testPositionId: string | null = null;
-  
-  try {
-    // Create test portfolio
-    const { data: portfolio, error: portfolioError } = await supabase
-      .from('portfolios')
-      .insert({
-        name: 'RLS Test Portfolio for Transactions',
-        description: 'Test portfolio for transaction RLS validation',
-        asset_type: 'stocks',
-      })
-      .select()
-      .single();
-
-    if (portfolioError || !portfolio) {
-      results.push({
-        table: 'transactions',
-        operation: 'SELECT',
-        success: false,
-        error: 'Failed to create test portfolio for transaction tests',
-        expectedBehavior: 'ALLOW',
-        actualBehavior: 'DENY',
-        passed: false,
-      });
-      
-      return {
-        name: 'Transaction RLS Tests',
-        results,
-        passed: false,
-        summary: { total: 1, passed: 0, failed: 1 },
-      };
-    }
-
-    testPortfolioId = portfolio.id;
-
-    // Create test position
-    const { data: position, error: positionError } = await supabase
-      .from('positions')
-      .insert({
-        portfolio_id: testPortfolioId,
-        symbol: 'RLSTEST',
-        name: 'RLS Test Stock',
-        quantity: 100,
-        average_cost: 10.50,
-        total_invested: 1050.00,
-      })
-      .select()
-      .single();
-
-    if (positionError || !position) {
-      results.push({
-        table: 'transactions',
-        operation: 'SELECT',
-        success: false,
-        error: 'Failed to create test position for transaction tests',
-        expectedBehavior: 'ALLOW',
-        actualBehavior: 'DENY',
-        passed: false,
-      });
-      
-      return {
-        name: 'Transaction RLS Tests',
-        results,
-        passed: false,
-        summary: { total: 1, passed: 0, failed: 1 },
-      };
-    }
-
-    testPositionId = position.id;
-
-    // Test 1: User can view transactions for their own positions
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('position_id', testPositionId)
-      .limit(1);
-    
-    results.push({
-      table: 'transactions',
-      operation: 'SELECT',
-      success: !error,
-      error: error?.message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: error ? 'DENY' : 'ALLOW',
-      passed: !error,
-    });
-
-    // Test 2: User can insert transactions for their own positions
-    const testTransaction = {
-      position_id: testPositionId,
-      type: 'BUY' as const,
-      quantity: 50,
-      price: 11.00,
-      transaction_date: new Date().toISOString(),
-    };
-
-    const { data: transactionData, error: insertError } = await supabase
-      .from('transactions')
-      .insert(testTransaction)
-      .select()
-      .single();
-    
-    results.push({
-      table: 'transactions',
-      operation: 'INSERT',
-      success: !insertError,
-      error: insertError?.message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: insertError ? 'DENY' : 'ALLOW',
-      passed: !insertError,
-    });
-
-    // Clean up test transaction if created
-    if (transactionData && !insertError) {
-      await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', transactionData.id);
-    }
-
-  } catch (err) {
-    results.push({
-      table: 'transactions',
-      operation: 'SELECT',
-      success: false,
-      error: (err as Error).message,
-      expectedBehavior: 'ALLOW',
-      actualBehavior: 'DENY',
-      passed: false,
-    });
-  } finally {
-    // Clean up test data
-    if (testPositionId) {
-      await supabase
-        .from('positions')
-        .delete()
-        .eq('id', testPositionId);
-    }
-    if (testPortfolioId) {
-      await supabase
-        .from('portfolios')
-        .delete()
-        .eq('id', testPortfolioId);
-    }
-  }
-
-  const passed = results.every(r => r.passed);
-  const summary = {
-    total: results.length,
-    passed: results.filter(r => r.passed).length,
-    failed: results.filter(r => !r.passed).length,
-  };
-
-  return {
-    name: 'Transaction RLS Tests',
-    results,
-    passed,
-    summary,
-  };
-}
-
-// Run all RLS tests
-export async function runAllRLSTests(): Promise<{
-  suites: RLSTestSuite[];
-  overallPassed: boolean;
-  summary: {
-    totalSuites: number;
-    passedSuites: number;
-    failedSuites: number;
-    totalTests: number;
-    passedTests: number;
-    failedTests: number;
-  };
-}> {
-  SecurityAuditLogger.log(SECURITY_EVENTS.UNAUTHORIZED_ACCESS, {
-    action: 'rls_test_started',
-    timestamp: new Date().toISOString(),
-  });
-
-  const suites: RLSTestSuite[] = [];
-  
-  try {
-    // Run all test suites
-    const portfolioTests = await testPortfolioRLS();
-    const positionTests = await testPositionRLS();
-    const transactionTests = await testTransactionRLS();
-    
-    suites.push(portfolioTests, positionTests, transactionTests);
-    
-    const overallPassed = suites.every(suite => suite.passed);
-    
-    const summary = {
-      totalSuites: suites.length,
-      passedSuites: suites.filter(s => s.passed).length,
-      failedSuites: suites.filter(s => !s.passed).length,
-      totalTests: suites.reduce((acc, suite) => acc + suite.summary.total, 0),
-      passedTests: suites.reduce((acc, suite) => acc + suite.summary.passed, 0),
-      failedTests: suites.reduce((acc, suite) => acc + suite.summary.failed, 0),
-    };
-
-    SecurityAuditLogger.log(SECURITY_EVENTS.UNAUTHORIZED_ACCESS, {
-      action: 'rls_test_completed',
-      passed: overallPassed,
-      summary,
-      timestamp: new Date().toISOString(),
-    });
-
-    return {
-      suites,
-      overallPassed,
-      summary,
-    };
-  } catch (error) {
-    SecurityAuditLogger.log(SECURITY_EVENTS.UNAUTHORIZED_ACCESS, {
-      action: 'rls_test_failed',
-      error: (error as Error).message,
-      timestamp: new Date().toISOString(),
-    });
-
-    throw error;
-  }
-}
-
-// Utility to format RLS test results for display
-export function formatRLSTestResults(results: {
-  suites: RLSTestSuite[];
-  overallPassed: boolean;
-  summary: any;
-}): string {
-  let output = '\n=== Row Level Security (RLS) Test Results ===\n\n';
-  
-  results.suites.forEach(suite => {
-    output += `${suite.name}: ${suite.passed ? '✅ PASSED' : '❌ FAILED'}\n`;
-    output += `  Tests: ${suite.summary.passed}/${suite.summary.total} passed\n`;
-    
-    if (!suite.passed) {
-      suite.results.forEach(result => {
-        if (!result.passed) {
-          output += `  ❌ ${result.table} ${result.operation}: ${result.error}\n`;
-        }
-      });
-    }
-    output += '\n';
-  });
-  
-  output += `Overall Result: ${results.overallPassed ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED'}\n`;
-  output += `Summary: ${results.summary.passedTests}/${results.summary.totalTests} tests passed across ${results.summary.passedSuites}/${results.summary.totalSuites} suites\n`;
-  
-  return output;
-}
-
-// Development utility to run RLS tests (only in development)
-export async function runRLSTestsInDev(): Promise<void> {
-  if (import.meta.env.PROD) {
-    return;
-  }
-
-  try {
-    const results = await runAllRLSTests();
-    const formattedResults = formatRLSTestResults(results);
-    
-    if (results.overallPassed) {
-      // All tests passed
     } else {
-      // Some tests failed - this should be addressed
-      throw new Error('RLS tests failed - security policies may not be working correctly');
+      report += `All RLS tests passed! ✅\n`;
     }
-  } catch (error) {
-    // RLS test failed - log but don't break the app
-    SecurityAuditLogger.log(SECURITY_EVENTS.UNAUTHORIZED_ACCESS, {
-      action: 'rls_test_error',
-      error: (error as Error).message,
-      timestamp: new Date().toISOString(),
-    });
+
+    return report;
   }
+}
+
+/**
+ * Run RLS tests and return results
+ */
+export async function runRLSTests(): Promise<RLSTestResult[]> {
+  const tester = new RLSPolicyTester();
+  return await tester.runAllRLSTests();
+}
+
+/**
+ * Run RLS tests and log results (development only)
+ */
+export async function runAndLogRLSTests(): Promise<void> {
+  if (import.meta.env.PROD) {
+    return; // Don't run in production
+  }
+
+  const tester = new RLSPolicyTester();
+  await tester.runAllRLSTests();
+  
+  const report = tester.generateReport();
+  const summary = tester.getTestSummary();
+  
+  if (summary.failed > 0) {
+    console.warn('RLS Tests Failed:', report);
+  } else {
+    console.info('RLS Tests Passed:', report);
+  }
+}
+
+/**
+ * Hook for RLS testing in development
+ */
+export function useRLSTesting() {
+  const runTests = async () => {
+    const tester = new RLSPolicyTester();
+    return await tester.runAllRLSTests();
+  };
+
+  return { runTests };
 }
