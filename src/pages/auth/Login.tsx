@@ -37,7 +37,6 @@ export default function Login() {
   };
 
   const handleLoginError = (error: string) => {
-    console.error('Login error:', error);
     // Error is already displayed in the LoginForm component
   };
 

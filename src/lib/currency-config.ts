@@ -47,14 +47,13 @@ export function getUserPreferredCurrency(): string {
       return preferredCurrency;
     }
     
-    // Log warning if preferred currency is not supported
+    // Warning: preferred currency is not supported, falling back
     if (preferredCurrency && !getCurrencyByCode(preferredCurrency)) {
-      console.warn(`Unsupported preferred currency: ${preferredCurrency}. Falling back to ${DEFAULT_CURRENCY}`);
+      // Unsupported preferred currency, falling back to default
     }
     
     return DEFAULT_CURRENCY;
   } catch (error) {
-    console.error('Error getting user preferred currency:', error);
     return DEFAULT_CURRENCY;
   }
 }
@@ -98,7 +97,6 @@ export function formatCurrency(
 
     if (!currency) {
       // Fallback to USD if currency not found
-      console.warn(`Currency not found: ${targetCurrency}. Falling back to ${DEFAULT_CURRENCY}`);
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: DEFAULT_CURRENCY,
@@ -116,7 +114,6 @@ export function formatCurrency(
       ...numberFormatOptions,
     }).format(amount);
   } catch (error) {
-    console.error('Error formatting currency:', error);
     // Ultimate fallback
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -140,7 +137,6 @@ export function formatCurrencyExplicit(
     const currency = getCurrencyByCode(currencyCode);
 
     if (!currency) {
-      console.warn(`Currency not found: ${currencyCode}. Falling back to ${DEFAULT_CURRENCY}`);
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: DEFAULT_CURRENCY,
@@ -154,7 +150,6 @@ export function formatCurrencyExplicit(
       ...options,
     }).format(amount);
   } catch (error) {
-    console.error('Error formatting currency explicitly:', error);
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: DEFAULT_CURRENCY,
@@ -173,7 +168,6 @@ export function getCurrencySymbol(currencyCode?: string): string {
     const currency = getCurrencyByCode(targetCurrency);
     return currency?.symbol || '$';
   } catch (error) {
-    console.error('Error getting currency symbol:', error);
     return '$';
   }
 }
@@ -188,7 +182,6 @@ export function getCurrencyName(currencyCode?: string): string {
     const currency = getCurrencyByCode(targetCurrency);
     return currency?.name || 'US Dollar';
   } catch (error) {
-    console.error('Error getting currency name:', error);
     return 'US Dollar';
   }
 }

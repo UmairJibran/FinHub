@@ -38,7 +38,6 @@ import {
 export async function fetchPositionsByPortfolio(portfolioId: string): Promise<Position[]> {
   try {
     if (!isSupabaseAvailable || !supabase) {
-      console.error('Supabase client not available');
       throw new Error('Supabase is not configured');
     }
 
@@ -46,11 +45,8 @@ export async function fetchPositionsByPortfolio(portfolioId: string): Promise<Po
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      console.error('No authenticated user found');
       throw new Error('User not authenticated');
     }
-
-    console.log('Fetching positions for portfolio:', portfolioId);
 
     // First verify the portfolio belongs to the user
     const { data: portfolio, error: portfolioError } = await supabase
@@ -71,14 +67,10 @@ export async function fetchPositionsByPortfolio(portfolioId: string): Promise<Po
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching positions:', error);
       throw new Error(`Failed to fetch positions: ${error.message}`);
     }
-
-    console.log('Fetched positions:', data?.length || 0);
     return data || [];
   } catch (error) {
-    console.error('Error in fetchPositionsByPortfolio:', error);
     throw error;
   }
 }
@@ -101,7 +93,6 @@ export async function fetchPositionsWithMetrics(portfolioId: string): Promise<Po
       };
     });
   } catch (error) {
-    console.error('Error in fetchPositionsWithMetrics:', error);
     throw error;
   }
 }
@@ -145,7 +136,6 @@ export async function fetchPositionById(id: string): Promise<Position | null> {
 
     return data;
   } catch (error) {
-    console.error('Error in fetchPositionById:', error);
     throw error;
   }
 }
@@ -165,8 +155,6 @@ export async function createPosition(input: CreatePositionInput): Promise<Positi
     if (!user) {
       throw new Error('User not authenticated');
     }
-
-    console.log('Creating position with input:', input);
 
     // Verify portfolio belongs to user
     const { data: portfolio, error: portfolioError } = await supabase
@@ -229,7 +217,6 @@ export async function createPosition(input: CreatePositionInput): Promise<Positi
         input.purchase_price
       );
 
-      console.log('Updated existing position:', updatedPosition);
       return updatedPosition;
     } else {
       // Create new position
@@ -262,11 +249,9 @@ export async function createPosition(input: CreatePositionInput): Promise<Positi
         input.purchase_price
       );
 
-      console.log('Created new position:', newPosition);
       return newPosition;
     }
   } catch (error) {
-    console.error('Error in createPosition:', error);
     throw error;
   }
 }
@@ -295,8 +280,6 @@ export async function updatePosition(
     if (!currentPosition) {
       throw new Error('Position not found');
     }
-
-    console.log('Updating position:', id, 'with input:', input);
 
     const updateData: PositionUpdate = {};
 
@@ -351,10 +334,8 @@ export async function updatePosition(
       throw new Error(`Failed to update position: ${error.message}`);
     }
 
-    console.log('Position updated successfully:', data);
     return data;
   } catch (error) {
-    console.error('Error in updatePosition:', error);
     throw error;
   }
 }
@@ -381,8 +362,6 @@ export async function deletePosition(id: string): Promise<void> {
       throw new Error('Position not found');
     }
 
-    console.log('Deleting position:', id);
-
     // Note: Transactions will be automatically deleted due to CASCADE constraint
     // But we could also choose to keep them for historical purposes
     const { error } = await supabase
@@ -394,9 +373,7 @@ export async function deletePosition(id: string): Promise<void> {
       throw new Error(`Failed to delete position: ${error.message}`);
     }
 
-    console.log('Position deleted successfully');
   } catch (error) {
-    console.error('Error in deletePosition:', error);
     throw error;
   }
 }
@@ -439,7 +416,6 @@ export async function fetchTransactionsByPosition(positionId: string): Promise<T
 
     return data || [];
   } catch (error) {
-    console.error('Error in fetchTransactionsByPosition:', error);
     throw error;
   }
 }
@@ -482,7 +458,6 @@ export async function fetchRecentTransactions(limit: number = 10): Promise<Trans
 
     return data || [];
   } catch (error) {
-    console.error('Error in fetchRecentTransactions:', error);
     throw error;
   }
 }
@@ -522,7 +497,6 @@ export async function isSymbolExistsInPortfolio(
 
     return (data || []).length > 0;
   } catch (error) {
-    console.error('Error in isSymbolExistsInPortfolio:', error);
     throw error;
   }
 }
@@ -547,7 +521,6 @@ export async function getPositionCount(portfolioId: string): Promise<number> {
 
     return count || 0;
   } catch (error) {
-    console.error('Error in getPositionCount:', error);
     throw error;
   }
 }

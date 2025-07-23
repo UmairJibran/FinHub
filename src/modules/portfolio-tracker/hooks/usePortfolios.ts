@@ -162,7 +162,6 @@ export function useCreatePortfolio(): UseMutationResult<
         queryClient.setQueryData(portfolioKeys.lists(), context.previousPortfolios);
       }
       
-      console.error('Failed to create portfolio:', error);
       handleError(error, 'Failed to create portfolio');
     },
     // Always refetch after error or success
@@ -229,7 +228,6 @@ export function useUpdatePortfolio(): UseMutationResult<
         queryClient.setQueryData(portfolioKeys.lists(), context.previousPortfolios);
       }
       
-      console.error('Failed to update portfolio:', error);
       handleError(error, 'Failed to update portfolio');
     },
     // Always refetch after error or success
@@ -285,7 +283,6 @@ export function useDeletePortfolio(): UseMutationResult<
         queryClient.setQueryData(portfolioKeys.lists(), context.previousPortfolios);
       }
       
-      console.error('Failed to delete portfolio:', error);
       handleError(error, 'Failed to delete portfolio');
     },
     // Always refetch after error or success
@@ -362,9 +359,7 @@ export function usePortfolioManager() {
   // Handle retry logic for failed queries
   useEffect(() => {
     if (portfolios.error || summaries.error || count.error) {
-      console.log('Detected error in portfolio queries, scheduling retry');
       const retryTimeout = setTimeout(() => {
-        console.log('Retrying portfolio queries');
         if (portfolios.error) portfolios.refetch();
         if (summaries.error) summaries.refetch();
         if (count.error) count.refetch();

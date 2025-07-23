@@ -167,8 +167,6 @@ export function useCreateTransaction() {
           context.previousRecentTransactions
         );
       }
-      
-      console.error('Failed to create transaction:', error);
     },
     // Always refetch after error or success
     onSettled: (_data, _error, _variables) => {
@@ -230,8 +228,6 @@ export function useDeleteTransaction() {
       if (context?.previousRecentTransactions) {
         queryClient.setQueryData(transactionKeys.recent(10), context.previousRecentTransactions);
       }
-      
-      console.error('Failed to delete transaction:', error);
     },
     // Always refetch after error or success
     onSettled: () => {

@@ -29,8 +29,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
     this.setState({
       error,
       errorInfo,
@@ -44,12 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
     // Log to external service in production
     if (import.meta.env.PROD) {
       // TODO: Send to error reporting service
-      console.error('Production error:', {
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-      });
+      // Production error logging would go here
     }
   }
 
@@ -127,8 +120,6 @@ export class PortfolioErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('PortfolioErrorBoundary caught an error:', error, errorInfo);
-    
     this.setState({
       error,
       errorInfo,

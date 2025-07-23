@@ -47,7 +47,6 @@ export function useAuth({ refreshOnMount = false } = {}) {
       const { user } = authStore;
       
       if (!user) {
-        console.warn('Cannot refresh user: No authenticated user');
         return;
       }
       
@@ -56,7 +55,7 @@ export function useAuth({ refreshOnMount = false } = {}) {
         await authStore.loadUserProfile(user.id);
       }
     } catch (error) {
-      console.error('Error in safeRefreshUser:', error);
+      // Error in safeRefreshUser
     }
   };
   

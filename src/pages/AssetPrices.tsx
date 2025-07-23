@@ -136,7 +136,6 @@ export default function AssetPrices() {
 
       setUserAssets(Array.from(assetMap.values()));
     } catch (err) {
-      console.error('Error loading user assets:', err);
       setError('Failed to load your assets');
     } finally {
       setIsLoading(false);
@@ -181,7 +180,6 @@ export default function AssetPrices() {
       setIsDialogOpen(false);
       setSelectedAsset(null);
     } catch (err) {
-      console.error('Error updating price:', err);
       setError('Failed to update asset price');
     } finally {
       setIsUpdating(false);

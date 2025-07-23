@@ -95,11 +95,11 @@ export function useConnectionStatus() {
 
   useEffect(() => {
     const handleOnline = () => {
-      console.log('Connection restored, processing pending operations...');
+      // Connection restored, processing pending operations
     };
 
     const handleOffline = () => {
-      console.log('Connection lost, operations will be queued...');
+      // Connection lost, operations will be queued
     };
 
     window.addEventListener('online', handleOnline);

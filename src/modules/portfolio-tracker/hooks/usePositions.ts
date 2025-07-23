@@ -190,8 +190,6 @@ export function useCreatePosition() {
           context.previousPositions
         );
       }
-      
-      console.error('Failed to create position:', error);
     },
     // Always refetch after error or success
     onSettled: (_data, _error, variables) => {
@@ -246,8 +244,6 @@ export function useUpdatePosition() {
       if (context?.previousPosition) {
         queryClient.setQueryData(positionKeys.byId(variables.id), context.previousPosition);
       }
-      
-      console.error('Failed to update position:', error);
     },
     // Always refetch after error or success
     onSettled: (data, _error, variables) => {
@@ -297,8 +293,6 @@ export function useDeletePosition() {
         queryClient.setQueryData(positionKeys.byId(deletedId), context.previousPosition);
         cacheManager.optimistic.optimisticallyAddPosition(context.previousPosition);
       }
-      
-      console.error('Failed to delete position:', error);
     },
     // Always refetch after error or success
     onSettled: () => {
@@ -365,7 +359,6 @@ export function usePositionForm(portfolioId: string, position?: Position) {
       const exists = await isSymbolExistsInPortfolio(portfolioId, symbol, position?.id);
       return !exists;
     } catch (error) {
-      console.error('Error validating symbol:', error);
       return true; // Allow on error to not block user
     }
   };

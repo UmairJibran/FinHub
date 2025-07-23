@@ -87,7 +87,6 @@ export default function PortfolioDetail() {
       setIsPositionFormOpen(false);
       setEditingPosition(null);
     } catch (error) {
-      console.error('Error submitting position form:', error);
       // Error is handled by the hook and displayed in the form
     }
   };
@@ -98,7 +97,6 @@ export default function PortfolioDetail() {
       setIsDeleteDialogOpen(false);
       setDeletingPosition(null);
     } catch (error) {
-      console.error('Error deleting position:', error);
       // Error is handled by the hook
     }
   };

@@ -28,7 +28,7 @@ export function Header(): JSX.Element {
         try {
             await signOut();
         } catch (error) {
-            console.error('Logout error:', error);
+            // Logout error
         }
     };
 

@@ -34,13 +34,9 @@ export async function createAutomaticTransaction(
       .insert(transactionData);
 
     if (error) {
-      console.error('Failed to create automatic transaction:', error);
       // Don't throw here as we don't want to break the main operation
-    } else {
-      console.log('Automatic transaction created:', { type, quantity, price });
     }
   } catch (error) {
-    console.error('Error in createAutomaticTransaction:', error);
     // Don't throw here as we don't want to break the main operation
   }
 }
@@ -71,12 +67,10 @@ export async function createBulkAutomaticTransactions(
       .insert(transactionData);
 
     if (error) {
-      console.error('Failed to create bulk automatic transactions:', error);
-    } else {
-      console.log('Bulk automatic transactions created:', transactions.length);
+      // Failed to create bulk automatic transactions
     }
   } catch (error) {
-    console.error('Error in createBulkAutomaticTransactions:', error);
+    // Error in createBulkAutomaticTransactions
   }
 }
 

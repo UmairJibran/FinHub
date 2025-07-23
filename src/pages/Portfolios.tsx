@@ -128,7 +128,7 @@ export default function Portfolios() {
       await createPortfolio(data);
       setShowCreateForm(false);
     } catch (error) {
-      console.error('Failed to create portfolio:', error);
+      // Error is handled by the hook
     }
   };
 
@@ -142,7 +142,7 @@ export default function Portfolios() {
       });
       setEditingPortfolio(null);
     } catch (error) {
-      console.error('Failed to update portfolio:', error);
+      // Error is handled by the hook
     }
   };
 
@@ -151,7 +151,7 @@ export default function Portfolios() {
       await deletePortfolio(portfolioId);
       setDeletingPortfolio(null);
     } catch (error) {
-      console.error('Failed to delete portfolio:', error);
+      // Error is handled by the hook
     }
   };
 

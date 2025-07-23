@@ -87,7 +87,7 @@ export function TransactionForm({
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Failed to create transaction:', error);
+      // Failed to create transaction
     }
   };
 

@@ -40,7 +40,6 @@ export function validateSupabaseConnection(): boolean {
     getSupabaseConfig();
     return true;
   } catch (error) {
-    console.error('Supabase configuration error:', error);
     return false;
   }
 }

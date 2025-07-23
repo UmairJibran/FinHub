@@ -22,7 +22,6 @@ export function useCalculator(): {
             setResults(results);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Calculation failed");
-            console.error(err);
         } finally {
             setIsCalculating(false);
         }

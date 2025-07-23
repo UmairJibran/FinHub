@@ -35,14 +35,12 @@ export function LogoutButton({
       const { error } = await signOut();
       
       if (error) {
-        console.error('Logout error:', error);
         // Still navigate to home even if there's an error
       }
       
       // Navigate to home page after logout
       navigate('/', { replace: true });
     } catch (error) {
-      console.error('Unexpected logout error:', error);
       // Still navigate to home even if there's an error
       navigate('/', { replace: true });
     } finally {
@@ -98,7 +96,6 @@ export function useLogout() {
       
       return { error };
     } catch (error) {
-      console.error('Unexpected logout error:', error);
       navigate('/', { replace: true });
       return { error };
     } finally {

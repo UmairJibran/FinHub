@@ -124,7 +124,6 @@ export function PositionForm({
 
       onClose();
     } catch (error) {
-      console.error('Error submitting position form:', error);
       // Error handling is done by parent component
     } finally {
       setIsSubmitting(false);

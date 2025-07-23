@@ -53,6 +53,7 @@ export interface FetchOptions extends RequestInit {
   retries?: number;
   retryDelay?: number;
   retryCondition?: (error: any, attempt: number) => boolean;
+  corsMode?: 'cors' | 'no-cors' | 'same-origin';
 }
 
 export async function enhancedFetch(
@@ -63,6 +64,7 @@ export async function enhancedFetch(
     timeout = 10000,
     retries = 3,
     retryDelay = 1000,
+    corsMode = 'cors',
     retryCondition = (error, attempt) => {
       // Retry on network errors or 5xx server errors
       return (
@@ -92,6 +94,12 @@ export async function enhancedFetch(
       const response = await fetch(url, {
         ...fetchOptions,
         signal: controller.signal,
+        mode: corsMode,
+        credentials: corsMode === 'cors' ? 'include' : 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...fetchOptions.headers,
+        },
       });
 
       clearTimeout(timeoutId);

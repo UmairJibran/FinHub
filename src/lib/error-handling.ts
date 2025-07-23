@@ -149,9 +149,32 @@ export function showErrorToast(error: any, customMessage?: string) {
   const appError = classifyError(error);
   const message = customMessage || getErrorMessage(appError);
   
+  // Only show detailed error messages in development
+  // In production, show sanitized user-friendly messages only
+  const description = import.meta.env.DEV && appError.message 
+    ? sanitizeErrorMessage(appError.message)
+    : undefined;
+  
   toast.error(message, {
-    description: import.meta.env.DEV ? appError.message : undefined,
+    description,
   });
+}
+
+// Sanitize error messages to prevent sensitive data leakage
+function sanitizeErrorMessage(message: string): string {
+  if (typeof message !== 'string') return 'An error occurred';
+  
+  // Remove potentially sensitive information
+  return message
+    .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[email]') // Remove emails
+    .replace(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, '[card]') // Remove card numbers
+    .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, '[ip]') // Remove IP addresses
+    .replace(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '[uuid]') // Remove UUIDs
+    .replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/g, 'Bearer [token]') // Remove tokens
+    .replace(/password[=:]\s*[^\s]+/gi, 'password=[hidden]') // Remove passwords
+    .replace(/key[=:]\s*[^\s]+/gi, 'key=[hidden]') // Remove API keys
+    .replace(/secret[=:]\s*[^\s]+/gi, 'secret=[hidden]') // Remove secrets
+    .substring(0, 200); // Limit message length
 }
 
 // Success toast utility
@@ -202,7 +225,6 @@ export async function withRetry<T>(
 // Hook for handling async operations with error handling
 export function useErrorHandler() {
   const handleError = (error: any, customMessage?: string) => {
-    console.error('Application Error:', error);
     showErrorToast(error, customMessage);
   };
 

@@ -36,7 +36,7 @@ export function Sidebar({ className }: SidebarProps) {
     try {
       await signOut();
     } catch (error) {
-      console.error('Error signing out:', error);
+      // Error signing out
     }
   };
 
@@ -237,7 +237,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       await signOut();
       onClose();
     } catch (error) {
-      console.error('Error signing out:', error);
+      // Error signing out
     }
   };
 

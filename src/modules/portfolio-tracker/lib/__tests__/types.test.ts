@@ -21,21 +21,21 @@ import {
 
 // Simple test runner
 function runTests() {
-  console.log('Running Portfolio Tracker Type Tests...\n');
+  // Running Portfolio Tracker Type Tests
 
   // Test Enums
-  console.log('✓ AssetType enum values are correct');
-  console.assert(AssetType.STOCKS === 'stocks');
-  console.assert(AssetType.CRYPTO === 'crypto');
-  console.assert(AssetType.MUTUAL_FUNDS === 'mutual_funds');
+  // ✓ AssetType enum values are correct
+  if (AssetType.STOCKS !== 'stocks') throw new Error('AssetType.STOCKS test failed');
+  if (AssetType.CRYPTO !== 'crypto') throw new Error('AssetType.CRYPTO test failed');
+  if (AssetType.MUTUAL_FUNDS !== 'mutual_funds') throw new Error('AssetType.MUTUAL_FUNDS test failed');
 
-  console.log('✓ TransactionType enum values are correct');
-  console.assert(TransactionType.BUY === 'BUY');
-  console.assert(TransactionType.SELL === 'SELL');
+  // ✓ TransactionType enum values are correct
+  if (TransactionType.BUY !== 'BUY') throw new Error('TransactionType.BUY test failed');
+  if (TransactionType.SELL !== 'SELL') throw new Error('TransactionType.SELL test failed');
 
-  console.log('✓ AssetTypeLabels are correct');
-  console.assert(AssetTypeLabels[AssetType.STOCKS] === 'Stocks');
-  console.assert(AssetTypeLabels[AssetType.CRYPTO] === 'Cryptocurrency');
+  // ✓ AssetTypeLabels are correct
+  if (AssetTypeLabels[AssetType.STOCKS] !== 'Stocks') throw new Error('AssetTypeLabels.STOCKS test failed');
+  if (AssetTypeLabels[AssetType.CRYPTO] !== 'Cryptocurrency') throw new Error('AssetTypeLabels.CRYPTO test failed');
 
   // Test Validation Schemas
   const validPortfolio = {
@@ -44,16 +44,16 @@ function runTests() {
     asset_type: AssetType.STOCKS
   };
   const portfolioResult = CreatePortfolioSchema.safeParse(validPortfolio);
-  console.assert(portfolioResult.success === true);
-  console.log('✓ Portfolio validation schema works');
+  if (portfolioResult.success !== true) throw new Error('Portfolio validation schema test failed');
+  // ✓ Portfolio validation schema works
 
   const invalidPortfolio = {
     name: '', // Empty name
     asset_type: 'invalid_type'
   };
   const invalidPortfolioResult = CreatePortfolioSchema.safeParse(invalidPortfolio);
-  console.assert(invalidPortfolioResult.success === false);
-  console.log('✓ Portfolio validation rejects invalid data');
+  if (invalidPortfolioResult.success !== false) throw new Error('Portfolio validation rejection test failed');
+  // ✓ Portfolio validation rejects invalid data
 
   const validPosition = {
     portfolio_id: '123e4567-e89b-12d3-a456-426614174000',
@@ -63,35 +63,35 @@ function runTests() {
     purchase_price: 150.50
   };
   const positionResult = CreatePositionSchema.safeParse(validPosition);
-  console.assert(positionResult.success === true);
-  console.log('✓ Position validation schema works');
+  if (positionResult.success !== true) throw new Error('Position validation schema test failed');
+  // ✓ Position validation schema works
 
   const validLogin = {
     email: 'test@example.com',
     password: 'password123'
   };
   const loginResult = LoginFormSchema.safeParse(validLogin);
-  console.assert(loginResult.success === true);
-  console.log('✓ Login form validation works');
+  if (loginResult.success !== true) throw new Error('Login form validation test failed');
+  // ✓ Login form validation works
 
   // Test Validation Helpers
-  console.assert(isValidUUID('123e4567-e89b-12d3-a456-426614174000') === true);
-  console.assert(isValidUUID('invalid-uuid') === false);
-  console.log('✓ UUID validation helper works');
+  if (isValidUUID('123e4567-e89b-12d3-a456-426614174000') !== true) throw new Error('UUID validation test failed');
+  if (isValidUUID('invalid-uuid') !== false) throw new Error('UUID validation rejection test failed');
+  // ✓ UUID validation helper works
 
-  console.assert(isValidAmount(100.50) === true);
-  console.assert(isValidAmount(-50) === false);
-  console.assert(isValidAmount(0) === false);
-  console.log('✓ Amount validation helper works');
+  if (isValidAmount(100.50) !== true) throw new Error('Amount validation test failed');
+  if (isValidAmount(-50) !== false) throw new Error('Amount validation negative test failed');
+  if (isValidAmount(0) !== false) throw new Error('Amount validation zero test failed');
+  // ✓ Amount validation helper works
 
-  console.assert(isValidQuantity(10.5) === true);
-  console.assert(isValidQuantity(0.00000001) === true);
-  console.assert(isValidQuantity(-5) === false);
-  console.log('✓ Quantity validation helper works');
+  if (isValidQuantity(10.5) !== true) throw new Error('Quantity validation test failed');
+  if (isValidQuantity(0.00000001) !== true) throw new Error('Quantity validation small test failed');
+  if (isValidQuantity(-5) !== false) throw new Error('Quantity validation negative test failed');
+  // ✓ Quantity validation helper works
 
-  console.assert(isValidSymbol('AAPL') === true);
-  console.assert(isValidSymbol('') === false);
-  console.log('✓ Symbol validation helper works');
+  if (isValidSymbol('AAPL') !== true) throw new Error('Symbol validation test failed');
+  if (isValidSymbol('') !== false) throw new Error('Symbol validation empty test failed');
+  // ✓ Symbol validation helper works
 
   // Test API Type Guards
   const successResponse = {
@@ -99,8 +99,8 @@ function runTests() {
     data: { id: '1', name: 'Test' },
     timestamp: new Date().toISOString()
   };
-  console.assert(isSuccessResponse(successResponse) === true);
-  console.log('✓ Success response type guard works');
+  if (isSuccessResponse(successResponse) !== true) throw new Error('Success response type guard test failed');
+  // ✓ Success response type guard works
 
   const errorResponse = {
     success: false as const,
@@ -110,10 +110,10 @@ function runTests() {
     },
     timestamp: new Date().toISOString()
   };
-  console.assert(isErrorResponse(errorResponse) === true);
-  console.log('✓ Error response type guard works');
+  if (isErrorResponse(errorResponse) !== true) throw new Error('Error response type guard test failed');
+  // ✓ Error response type guard works
 
-  console.log('\n🎉 All type tests passed!');
+  // 🎉 All type tests passed!
 }
 
 // Export for potential use

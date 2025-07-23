@@ -332,7 +332,7 @@ export class CachePersistenceManager {
         staleTime: 2 * 60 * 1000,
       });
     } catch (error) {
-      console.warn('Failed to prefetch critical data:', error);
+      // Silently fail prefetch operations
     }
   }
 

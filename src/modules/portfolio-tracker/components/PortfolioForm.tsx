@@ -86,7 +86,6 @@ export function PortfolioForm({
       await onSubmit(data);
     } catch (err) {
       // Error handling is done by parent component
-      console.error('Form submission error:', err);
     } finally {
       setIsSubmitting(false);
     }

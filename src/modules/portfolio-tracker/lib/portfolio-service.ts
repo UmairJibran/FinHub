@@ -52,8 +52,6 @@ export async function fetchPortfolios(): Promise<Portfolio[]> {
       );
     }
 
-    console.log('Fetching portfolios for user:', user.id);
-
     const { data, error } = await supabase
       .from('portfolios')
       .select('*')
@@ -61,8 +59,6 @@ export async function fetchPortfolios(): Promise<Portfolio[]> {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching portfolios:', error);
-      
       if (error.code === '42501') {
         throw new CustomError(
           'Access denied. Please check your permissions.',
@@ -78,7 +74,6 @@ export async function fetchPortfolios(): Promise<Portfolio[]> {
       );
     }
 
-    console.log('Fetched portfolios:', data?.length || 0);
     return data || [];
   }, {
     maxRetries: 3,
@@ -95,25 +90,19 @@ export async function fetchPortfolios(): Promise<Portfolio[]> {
 export async function fetchPortfolioSummaries(): Promise<PortfolioSummary[]> {
   try {
     if (!isSupabaseAvailable || !supabase) {
-      console.error('Supabase client not available');
       throw new Error('Supabase is not configured');
     }
 
-    console.log('Checking authentication status');
     const authResponse = await supabase.auth.getUser();
 
     const {
       data: { user },
     } = authResponse;
     if (!user) {
-      console.error('No authenticated user found');
       throw new Error('User not authenticated');
     }
 
-    console.log('Fetching portfolios for user:', user.id);
-
     // Fetch portfolios with position counts and totals
-    console.log('Executing main query');
     const { data, error } = await supabase
       .from('portfolios')
       .select(
@@ -132,7 +121,6 @@ export async function fetchPortfolioSummaries(): Promise<PortfolioSummary[]> {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching portfolios:', error);
       throw new Error(`Failed to fetch portfolio summaries: ${error.message}`);
     }
 
@@ -177,13 +165,9 @@ export async function fetchPortfolioSummaries(): Promise<PortfolioSummary[]> {
       };
     });
 
-    console.log('Fetched portfolio summaries:', summaries.length);
     return summaries;
   } catch (error) {
-    console.error('Error in fetchPortfolioSummaries:', error);
-
     // Return empty array instead of throwing to prevent UI from breaking
-    console.log('Returning empty portfolio summaries array due to error');
     return [];
   }
 }
@@ -247,8 +231,6 @@ export async function createPortfolio(
     );
   }
 
-  console.log('Creating portfolio for user:', user.id, 'with data:', input);
-
   const portfolioData: PortfolioInsert = {
     user_id: user.id,
     name: input.name.trim(),
@@ -264,8 +246,6 @@ export async function createPortfolio(
     .single();
 
   if (error) {
-    console.error('Error creating portfolio:', error);
-    
     if (error.code === '23505') {
       throw new CustomError(
         'A portfolio with this name already exists',
@@ -289,7 +269,6 @@ export async function createPortfolio(
     );
   }
 
-  console.log('Portfolio created successfully:', data);
   return data;
 }
 

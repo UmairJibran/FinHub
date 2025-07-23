@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { validateEnvironmentVariables } from '../input-sanitization';
 
 // Safe Supabase client initialization
 function createSupabaseClient() {
@@ -14,24 +15,38 @@ function createSupabaseClient() {
     anonKey.includes('your_supabase') ||
     !url.startsWith('https://')
   ) {
-    console.warn('Supabase is not configured. Using mock client.');
     // Return a mock client that won't cause errors
     return null;
   }
 
   try {
-    console.log('Creating Supabase client with URL:', url);
+    // Validate environment variables
+    validateEnvironmentVariables();
+    
     const client = createClient<Database>(url, anonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true,
+        // Security enhancements
+        flowType: 'pkce',
+        storage: window.localStorage,
+        storageKey: 'supabase.auth.token',
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'portfolio-tracker',
+        },
+      },
+      // Rate limiting and timeout configurations
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
       },
     });
-    console.log('Supabase client created successfully');
     return client;
   } catch (error) {
-    console.error('Failed to create Supabase client:', error);
     return null;
   }
 }

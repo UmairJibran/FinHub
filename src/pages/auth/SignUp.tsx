@@ -46,7 +46,6 @@ export default function SignUp() {
   };
 
   const handleSignUpError = (error: string) => {
-    console.error('Sign up error:', error);
     // Error is already displayed in the SignUpForm component
   };
 
@@ -55,7 +54,6 @@ export default function SignUp() {
   };
 
   const handleLoginError = (error: string) => {
-    console.error('Login error:', error);
     // Error is already displayed in the LoginForm component
   };
 

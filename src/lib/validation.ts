@@ -3,29 +3,28 @@
  */
 
 import { z } from 'zod';
+import { sanitizedSchemas } from './input-sanitization';
 
 // Common validation schemas
 export const commonSchemas = {
-  email: z.string().email('Please enter a valid email address'),
+  email: sanitizedSchemas.email,
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
-  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
-  positiveNumber: z.number().positive('Must be a positive number'),
-  nonNegativeNumber: z.number().min(0, 'Must be zero or positive'),
-  currency: z.number().min(0, 'Amount must be zero or positive').max(999999999, 'Amount is too large'),
-  percentage: z.number().min(0, 'Percentage must be zero or positive').max(100, 'Percentage cannot exceed 100%'),
+  name: z.string()
+    .transform(val => typeof val === 'string' ? val.trim() : val)
+    .min(1, 'Name is required')
+    .max(100, 'Name must be less than 100 characters'),
+  description: sanitizedSchemas.description,
+  positiveNumber: sanitizedSchemas.positiveNumber,
+  nonNegativeNumber: sanitizedSchemas.nonNegativeNumber,
+  currency: sanitizedSchemas.nonNegativeNumber.max(999999999, 'Amount is too large'),
+  percentage: sanitizedSchemas.nonNegativeNumber.max(100, 'Percentage cannot exceed 100%'),
 };
 
 // Portfolio validation schemas
 export const portfolioSchemas = {
-  name: z.string()
-    .min(1, 'Portfolio name is required')
-    .max(50, 'Portfolio name must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9\s\-_]+$/, 'Portfolio name can only contain letters, numbers, spaces, hyphens, and underscores'),
+  name: sanitizedSchemas.portfolioName,
   
-  description: z.string()
-    .max(200, 'Description must be less than 200 characters')
-    .optional(),
+  description: sanitizedSchemas.description,
   
   assetType: z.enum(['stocks', 'crypto', 'mixed'], {
     errorMap: () => ({ message: 'Please select a valid asset type' })
@@ -34,21 +33,15 @@ export const portfolioSchemas = {
 
 // Position validation schemas
 export const positionSchemas = {
-  symbol: z.string()
-    .min(1, 'Symbol is required')
-    .max(10, 'Symbol must be less than 10 characters')
-    .regex(/^[A-Z0-9]+$/, 'Symbol must contain only uppercase letters and numbers'),
+  symbol: sanitizedSchemas.assetSymbol,
   
-  quantity: z.number()
-    .positive('Quantity must be positive')
+  quantity: sanitizedSchemas.positiveNumber
     .max(999999999, 'Quantity is too large'),
   
-  averageCost: z.number()
-    .positive('Average cost must be positive')
+  averageCost: sanitizedSchemas.positiveNumber
     .max(999999, 'Average cost is too large'),
   
-  currentPrice: z.number()
-    .min(0, 'Current price cannot be negative')
+  currentPrice: sanitizedSchemas.nonNegativeNumber
     .max(999999, 'Current price is too large')
     .optional(),
 };

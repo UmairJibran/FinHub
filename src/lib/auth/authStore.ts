@@ -79,8 +79,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         data: { subscription: _subscription },
       } = supabase.auth.onAuthStateChange(
         async (event: AuthChangeEvent, session: Session | null) => {
-          console.log('Auth state changed:', event, session?.user?.id);
-
           set({
             session,
             user: session?.user || null,
@@ -115,7 +113,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error && error.code !== 'PGRST116') {
         // Not found error
-        console.error('Error loading user profile:', error);
         return;
       }
 
@@ -132,7 +129,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           });
 
         if (createError) {
-          console.error('Error creating user profile:', createError);
+          // Error creating user profile
         } else {
           existingProfile = newProfile;
         }
@@ -140,7 +137,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ profile: existingProfile });
     } catch (error) {
-      console.error('Error in loadUserProfile:', error);
+      // Error in loadUserProfile
     }
   },
 
@@ -200,7 +197,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await AuthService.refreshSession();
     } catch (error) {
-      console.error('Error refreshing session:', error);
+      // Error refreshing session
     }
   },
   
@@ -211,7 +208,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user } = get();
       
       if (!user) {
-        console.warn('Cannot refresh user: No authenticated user');
         return;
       }
       
@@ -221,9 +217,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Reload the user profile to get the latest preferences
       await get().loadUserProfile(user.id);
       
-      console.log('User data refreshed successfully');
     } catch (error) {
-      console.error('Error refreshing user data:', error);
+      // Error refreshing user data
     } finally {
       set({ isLoading: false });
     }

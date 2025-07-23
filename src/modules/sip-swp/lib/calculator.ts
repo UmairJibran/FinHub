@@ -89,7 +89,6 @@ export function calculateSIPSWP(inputs: CalculatorInputs): CalculationResults {
 
         return results;
     } catch (error) {
-        console.error('Calculation error at year:', lastYear, error);
         throw error;
     }
 } 

@@ -57,8 +57,6 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
       throw new Error('User not authenticated');
     }
 
-    console.log('Creating transaction with input:', input);
-
     // Verify position belongs to user
     const { data: position, error: positionError } = await supabase
       .from('positions')
@@ -95,10 +93,8 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
       throw new Error(`Failed to create transaction: ${error.message}`);
     }
 
-    console.log('Transaction created successfully:', data);
     return data;
   } catch (error) {
-    console.error('Error in createTransaction:', error);
     throw error;
   }
 }
@@ -121,8 +117,6 @@ export async function fetchTransactions(params: TransactionQueryParams = {}): Pr
     if (!user) {
       throw new Error('User not authenticated');
     }
-
-    console.log('Fetching transactions with params:', params);
 
     // Build the query
     let query = supabase
@@ -210,13 +204,11 @@ export async function fetchTransactions(params: TransactionQueryParams = {}): Pr
       },
     }));
 
-    console.log('Fetched transactions:', transactions.length, 'total:', count);
     return {
       transactions,
       total: count || 0,
     };
   } catch (error) {
-    console.error('Error in fetchTransactions:', error);
     throw error;
   }
 }
@@ -266,7 +258,6 @@ export async function fetchTransactionsByPosition(positionId: string): Promise<T
 
     return data || [];
   } catch (error) {
-    console.error('Error in fetchTransactionsByPosition:', error);
     throw error;
   }
 }
@@ -282,7 +273,6 @@ export async function fetchTransactionsByPortfolio(portfolioId: string): Promise
     });
     return result.transactions;
   } catch (error) {
-    console.error('Error in fetchTransactionsByPortfolio:', error);
     throw error;
   }
 }
@@ -299,7 +289,6 @@ export async function fetchRecentTransactions(limit: number = 10): Promise<Trans
     });
     return result.transactions;
   } catch (error) {
-    console.error('Error in fetchRecentTransactions:', error);
     throw error;
   }
 }
@@ -370,7 +359,6 @@ export async function fetchTransactionById(id: string): Promise<TransactionWithD
 
     return transaction;
   } catch (error) {
-    console.error('Error in fetchTransactionById:', error);
     throw error;
   }
 }
@@ -460,7 +448,6 @@ export async function getTransactionStats(): Promise<{
 
     return stats;
   } catch (error) {
-    console.error('Error in getTransactionStats:', error);
     throw error;
   }
 }
@@ -500,9 +487,7 @@ export async function deleteTransaction(id: string): Promise<void> {
       throw new Error(`Failed to delete transaction: ${error.message}`);
     }
 
-    console.log('Transaction deleted successfully');
   } catch (error) {
-    console.error('Error in deleteTransaction:', error);
     throw error;
   }
 }
@@ -527,7 +512,6 @@ export async function getTransactionCount(positionId: string): Promise<number> {
 
     return count || 0;
   } catch (error) {
-    console.error('Error in getTransactionCount:', error);
     throw error;
   }
 }

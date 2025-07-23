@@ -27,7 +27,6 @@ export default function Callback() {
         const { data, error: authError } = await supabase.auth.getSession();
 
         if (authError) {
-          console.error('Auth callback error:', authError);
           setState('error');
           setError(authError.message || 'Authentication failed');
           return;
@@ -48,7 +47,6 @@ export default function Callback() {
           setError('No session found. Please try signing in again.');
         }
       } catch (err) {
-        console.error('Unexpected error in auth callback:', err);
         setState('error');
         setError('An unexpected error occurred during authentication.');
       }

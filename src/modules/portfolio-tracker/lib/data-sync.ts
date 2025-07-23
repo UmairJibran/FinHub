@@ -256,7 +256,6 @@ export class OfflineSyncManager {
       try {
         await this.executeOperation(operation);
       } catch (error) {
-        console.error('Failed to execute pending operation:', error);
         // Re-add failed operation to queue
         this.pendingOperations.push(operation);
       }
@@ -296,7 +295,7 @@ export class OfflineSyncManager {
         }
       }
     } catch (error) {
-      console.error('Failed to load pending operations:', error);
+      // Failed to load pending operations
     }
   }
 
@@ -312,7 +311,7 @@ export class OfflineSyncManager {
         );
       }
     } catch (error) {
-      console.error('Failed to save pending operations:', error);
+      // Failed to save pending operations
     }
   }
 
@@ -404,7 +403,7 @@ export class BackgroundSyncManager {
         refetchType: 'active',
       });
     } catch (error) {
-      console.error('Background sync failed:', error);
+      // Background sync failed
     }
   }
 }

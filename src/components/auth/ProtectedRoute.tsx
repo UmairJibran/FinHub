@@ -125,7 +125,7 @@ export function useAuthNavigation() {
       callback();
     } else {
       // Could dispatch a login modal or redirect
-      console.warn('Authentication required for this action');
+      // Authentication required for this action
     }
   };
 
