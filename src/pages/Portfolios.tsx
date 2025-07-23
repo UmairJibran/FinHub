@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   TrendingUp,
@@ -21,6 +21,7 @@ import {
   DeletePortfolioDialog,
 } from '@/modules/portfolio-tracker/components';
 import { usePortfolioManager } from '@/modules/portfolio-tracker/hooks';
+import { useAuth } from '@/hooks/useAuth';
 import type {
   PortfolioSummary,
   PortfolioFormData,
@@ -28,12 +29,18 @@ import type {
 
 export default function Portfolios() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPortfolio, setEditingPortfolio] =
     useState<PortfolioSummary | null>(null);
   const [deletingPortfolio, setDeletingPortfolio] =
     useState<PortfolioSummary | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('');
+  
+  // Refresh user data on component mount to ensure we have the latest currency preferences
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
   // Portfolio data and operations
   const {

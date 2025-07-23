@@ -60,6 +60,7 @@ export function PortfolioCard({
 
 
 
+  // Format percentage with proper sign
   const formatPercentage = (percentage: number) => {
     return `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%`;
   };

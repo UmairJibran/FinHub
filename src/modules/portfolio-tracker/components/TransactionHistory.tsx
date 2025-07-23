@@ -3,7 +3,7 @@
  * Shows recent transactions with filtering and pagination
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { useRecentTransactions } from '../hooks/useTransactions';
 import { TransactionType } from '../lib/types';
 import type { Transaction } from '../lib/types';
 import { formatCurrency } from '@/lib/currency-config';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TransactionWithDetails extends Transaction {
   position?: {
@@ -120,9 +121,15 @@ export function TransactionHistory({
   showFilters = true, 
   className 
 }: TransactionHistoryProps) {
+  const { refreshUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [displayLimit, setDisplayLimit] = useState(limit);
+  
+  // Refresh user data on component mount to ensure we have the latest currency preferences
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
   const { data: transactions = [], isLoading, error } = useRecentTransactions(displayLimit);
 

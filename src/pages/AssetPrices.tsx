@@ -50,7 +50,7 @@ interface UserAsset {
 }
 
 export default function AssetPrices() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshUser } = useAuth();
   const [userAssets, setUserAssets] = useState<UserAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -65,12 +65,14 @@ export default function AssetPrices() {
     },
   });
 
-  // Load user's assets
+  // Load user's assets and refresh user data
   useEffect(() => {
     if (user) {
+      // Refresh user data to ensure we have the latest currency preferences
+      refreshUser();
       loadUserAssets();
     }
-  }, [user]);
+  }, [user, refreshUser]);
 
   const loadUserAssets = async () => {
     if (!supabase || !user) return;

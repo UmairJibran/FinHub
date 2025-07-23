@@ -2,7 +2,7 @@
  * Portfolio detail page with position management
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Settings, TrendingUp, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,15 +17,22 @@ import { DeletePositionDialog } from '@/modules/portfolio-tracker/components/Del
 import { AssetTypeLabels } from '@/modules/portfolio-tracker/lib/types';
 import type { PositionWithMetrics, CreatePositionInput, UpdatePositionInput } from '@/modules/portfolio-tracker/lib/types';
 import { formatCurrency } from '@/lib/currency-config';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function PortfolioDetail() {
   const { portfolioId } = useParams<{ portfolioId: string }>();
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   
   const [isPositionFormOpen, setIsPositionFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<PositionWithMetrics | null>(null);
   const [deletingPosition, setDeletingPosition] = useState<PositionWithMetrics | null>(null);
+  
+  // Refresh user data on component mount to ensure we have the latest currency preferences
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
   // Fetch portfolio data
   const { data: portfolio, isLoading: portfolioLoading, error: portfolioError } = usePortfolio(portfolioId!);

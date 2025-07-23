@@ -1,5 +1,6 @@
 import { useAuthStore } from '../lib/auth/authStore';
 import { useEffect } from 'react';
+import { supabase, isSupabaseAvailable } from '../lib/supabase/client';
 
 // Check if Supabase is configured
 function checkSupabaseConfig(): boolean {
@@ -39,11 +40,33 @@ export function useAuth({ refreshOnMount = false } = {}) {
     }
   }, [refreshOnMount, authStore.user !== null]);
   
+  // Create a safe version of refreshUser that won't cause loading state issues
+  const safeRefreshUser = async () => {
+    try {
+      // Don't set loading state to true, just refresh the data
+      const { user } = authStore;
+      
+      if (!user) {
+        console.warn('Cannot refresh user: No authenticated user');
+        return;
+      }
+      
+      // Just get the latest user profile without setting loading state
+      if (isSupabaseConfigured && supabase) {
+        await authStore.loadUserProfile(user.id);
+      }
+    } catch (error) {
+      console.error('Error in safeRefreshUser:', error);
+    }
+  };
+  
   return {
     ...authStore,
     isSupabaseConfigured,
     // Add compatibility properties for components that expect the old context API
-    loading: authStore.isLoading
+    loading: authStore.isLoading,
+    // Replace refreshUser with our safe version
+    refreshUser: safeRefreshUser
   };
 }
 

@@ -3,6 +3,7 @@
  * Main dashboard with portfolio summaries and key metrics
  */
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -220,7 +221,12 @@ export function DashboardOverview() {
   } = usePortfolioSummaries();
   const { data: recentTransactions = [], isLoading: isLoadingTransactions } =
     useRecentTransactions(5);
-  const { profile, refreshUser } = useAuth({ refreshOnMount: true });
+  const { profile, refreshUser } = useAuth();
+  
+  // Refresh user data on component mount to ensure we have the latest currency preferences
+  React.useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
   // Get the user's preferred currency and locale
   const preferredCurrency =

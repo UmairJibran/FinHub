@@ -2,7 +2,7 @@
  * Transaction Form Component - For manual transaction entry
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
@@ -34,6 +34,7 @@ import { Button } from '../../../components/ui/button';
 import { useCreateTransaction } from '../hooks/useTransactions';
 import { TransactionFormSchema } from '../lib/schemas';
 import type { TransactionFormInput, TransactionType } from '../lib/types';
+import { useAuth } from '@/hooks/useAuth';
 
 // ============================================================================
 // INTERFACES
@@ -58,7 +59,15 @@ export function TransactionForm({
   defaultType = 'BUY',
   onSuccess,
 }: TransactionFormProps) {
+  const { refreshUser } = useAuth();
   const createTransactionMutation = useCreateTransaction();
+  
+  // Refresh user data on component mount to ensure we have the latest currency preferences
+  useEffect(() => {
+    if (isOpen) {
+      refreshUser();
+    }
+  }, [isOpen, refreshUser]);
 
   const form = useForm<TransactionFormInput>({
     resolver: zodResolver(TransactionFormSchema),
