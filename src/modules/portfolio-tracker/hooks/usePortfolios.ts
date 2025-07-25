@@ -1,8 +1,9 @@
 /**
  * Custom hooks for portfolio data management with TanStack Query
+ * Optimized for performance with intelligent caching and minimal refetches
  */
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { 
   useQuery, 
   useMutation, 
@@ -12,6 +13,7 @@ import {
 } from '@tanstack/react-query';
 import { useErrorHandler } from '../../../lib/error-handling';
 import { CacheManager } from '../lib/cache-utils';
+import { simplePerformanceMonitor } from '../../../lib/performance-simple';
 import { 
   fetchPortfolios,
   fetchPortfolioSummaries,
@@ -49,29 +51,73 @@ export const portfolioKeys = {
 
 /**
  * Hook to fetch all portfolios for the authenticated user
+ * Optimized with performance tracking and intelligent caching
  */
 export function usePortfolios(): UseQueryResult<Portfolio[], Error> {
+  const queryFn = useCallback(async () => {
+    const startTime = performance.now();
+    try {
+      const result = await fetchPortfolios();
+      const duration = performance.now() - startTime;
+      simplePerformanceMonitor.trackApiCall('portfolios_list', duration, true);
+      return result;
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      simplePerformanceMonitor.trackApiCall('portfolios_list', duration, false);
+      throw error;
+    }
+  }, []);
+
   return useQuery({
     queryKey: portfolioKeys.lists(),
-    queryFn: fetchPortfolios,
+    queryFn,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
+    // Reduce background refetching to prevent excessive calls
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
+    // Enable structural sharing for better performance
+    structuralSharing: true,
+    // Keep previous data during refetch for better UX
+    placeholderData: (previousData) => previousData,
   });
 }
 
 /**
  * Hook to fetch portfolio summaries with calculated metrics
+ * Optimized with performance tracking and reduced refetch frequency
  */
 export function usePortfolioSummaries(): UseQueryResult<PortfolioSummary[], Error> {
+  const queryFn = useCallback(async () => {
+    const startTime = performance.now();
+    try {
+      const result = await fetchPortfolioSummaries();
+      const duration = performance.now() - startTime;
+      simplePerformanceMonitor.trackApiCall('portfolio_summaries', duration, true);
+      return result;
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      simplePerformanceMonitor.trackApiCall('portfolio_summaries', duration, false);
+      throw error;
+    }
+  }, []);
+
   return useQuery({
     queryKey: portfolioKeys.summaries(),
-    queryFn: fetchPortfolioSummaries,
-    staleTime: 2 * 60 * 1000, // 2 minutes (shorter for summaries with calculations)
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    queryFn,
+    staleTime: 3 * 60 * 1000, // Increased to 3 minutes to reduce calls
+    gcTime: 8 * 60 * 1000, // 8 minutes
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
+    // Disable automatic refetching to prevent excessive calls
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
+    // Enable structural sharing for better performance
+    structuralSharing: true,
+    // Keep previous data during refetch for better UX
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -138,6 +184,7 @@ export function useCreatePortfolio(): UseMutationResult<
         name: newPortfolioInput.name,
         description: newPortfolioInput.description,
         asset_type: newPortfolioInput.asset_type,
+        currency: newPortfolioInput.currency || 'USD',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -151,8 +198,10 @@ export function useCreatePortfolio(): UseMutationResult<
       // Replace optimistic update with real data
       cacheManager.optimistic.optimisticallyAddPortfolio(newPortfolio);
       
-      // Invalidate related queries
-      cacheManager.invalidation.invalidatePortfolioData(newPortfolio.id);
+      // Only invalidate specific queries to reduce unnecessary refetches
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.count() });
 
       handleSuccess('Portfolio created successfully');
     },
@@ -164,9 +213,11 @@ export function useCreatePortfolio(): UseMutationResult<
       
       handleError(error, 'Failed to create portfolio');
     },
-    // Always refetch after error or success
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
+    // Only invalidate on error to ensure data consistency
+    onSettled: (_data, error) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: portfolioKeys.lists() });
+      }
     },
   });
 }
@@ -214,8 +265,9 @@ export function useUpdatePortfolio(): UseMutationResult<
       // Update with real data
       cacheManager.optimistic.optimisticallyUpdatePortfolio(updatedPortfolio);
       
-      // Invalidate related queries
-      cacheManager.invalidation.invalidatePortfolioData(id);
+      // Only invalidate specific queries
+      queryClient.setQueryData(portfolioKeys.detail(id), updatedPortfolio);
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
       
       handleSuccess('Portfolio updated successfully');
     },
@@ -230,10 +282,12 @@ export function useUpdatePortfolio(): UseMutationResult<
       
       handleError(error, 'Failed to update portfolio');
     },
-    // Always refetch after error or success
-    onSettled: (_data, _error, { id }) => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
+    // Only invalidate on error to ensure data consistency
+    onSettled: (_data, error, { id }) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(id) });
+        queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
+      }
     },
   });
 }
@@ -269,8 +323,11 @@ export function useDeletePortfolio(): UseMutationResult<
       return { previousPortfolio, previousPortfolios };
     },
     onSuccess: (_, deletedId, _context) => {
-      // Invalidate all related data
-      cacheManager.invalidation.invalidatePortfolioData(deletedId);
+      // Remove from cache and invalidate related queries
+      queryClient.removeQueries({ queryKey: portfolioKeys.detail(deletedId) });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
+      queryClient.invalidateQueries({ queryKey: portfolioKeys.count() });
       
       handleSuccess('Portfolio deleted successfully');
     },
@@ -285,9 +342,11 @@ export function useDeletePortfolio(): UseMutationResult<
       
       handleError(error, 'Failed to delete portfolio');
     },
-    // Always refetch after error or success
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: portfolioKeys.all });
+    // Only invalidate on error to ensure data consistency
+    onSettled: (_data, error) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: portfolioKeys.lists() });
+      }
     },
   });
 }

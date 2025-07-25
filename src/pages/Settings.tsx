@@ -98,9 +98,11 @@ export default function Settings() {
       if (error) {
         setProfileError(error.message || 'Failed to update profile');
       } else {
-        // Refresh user data to ensure currency changes are reflected immediately
-        await refreshUser();
         setProfileSuccess('Profile updated successfully!');
+        // Only refresh if currency changed to avoid unnecessary calls
+        if (data.preferredCurrency !== profile?.preferred_currency) {
+          await refreshUser();
+        }
       }
     } catch (err) {
       setProfileError('An unexpected error occurred');

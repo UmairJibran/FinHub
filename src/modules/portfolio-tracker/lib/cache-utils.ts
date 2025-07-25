@@ -1,11 +1,13 @@
 /**
  * Cache utilities for intelligent data persistence and invalidation strategies
+ * Enhanced with performance optimizations and deduplication
  */
 
 import { QueryClient } from '@tanstack/react-query';
 import { portfolioKeys } from '../hooks/usePortfolios';
 import { positionKeys } from '../hooks/usePositions';
 import { transactionKeys } from '../hooks/useTransactions';
+import { simplePerformanceMonitor } from '../../../lib/performance-simple';
 import type { Portfolio, Position, Transaction } from './types';
 
 // ============================================================================
@@ -14,25 +16,49 @@ import type { Portfolio, Position, Transaction } from './types';
 
 /**
  * Intelligent cache invalidation based on data relationships
+ * Enhanced with debouncing and performance tracking
  */
 export class CacheInvalidationManager {
+  private invalidationQueue = new Map<string, NodeJS.Timeout>();
+  private readonly DEBOUNCE_TIME = 100; // 100ms debounce
+
   constructor(private queryClient: QueryClient) {}
 
   /**
    * Invalidate all portfolio-related data when a portfolio changes
+   * Enhanced with debouncing to prevent excessive invalidations
    */
   invalidatePortfolioData(portfolioId: string) {
-    // Invalidate portfolio-specific queries
-    this.queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(portfolioId) });
-    this.queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
+    const key = `portfolio-${portfolioId}`;
     
-    // Invalidate related position data
-    this.queryClient.invalidateQueries({ queryKey: positionKeys.byPortfolio(portfolioId) });
-    this.queryClient.invalidateQueries({ queryKey: positionKeys.withMetrics(portfolioId) });
-    this.queryClient.invalidateQueries({ queryKey: positionKeys.count(portfolioId) });
-    
-    // Invalidate related transaction data
-    this.queryClient.invalidateQueries({ queryKey: transactionKeys.byPortfolio(portfolioId) });
+    // Clear existing timeout
+    if (this.invalidationQueue.has(key)) {
+      clearTimeout(this.invalidationQueue.get(key)!);
+    }
+
+    // Set new timeout
+    const timeout = setTimeout(() => {
+      const startTime = performance.now();
+      
+      // Invalidate portfolio-specific queries
+      this.queryClient.invalidateQueries({ queryKey: portfolioKeys.detail(portfolioId) });
+      this.queryClient.invalidateQueries({ queryKey: portfolioKeys.summaries() });
+      
+      // Invalidate related position data
+      this.queryClient.invalidateQueries({ queryKey: positionKeys.byPortfolio(portfolioId) });
+      this.queryClient.invalidateQueries({ queryKey: positionKeys.withMetrics(portfolioId) });
+      this.queryClient.invalidateQueries({ queryKey: positionKeys.count(portfolioId) });
+      
+      // Invalidate related transaction data
+      this.queryClient.invalidateQueries({ queryKey: transactionKeys.byPortfolio(portfolioId) });
+      
+      const duration = performance.now() - startTime;
+      simplePerformanceMonitor.trackApiCall('cache_invalidation_portfolio', duration, true);
+      
+      this.invalidationQueue.delete(key);
+    }, this.DEBOUNCE_TIME);
+
+    this.invalidationQueue.set(key, timeout);
   }
 
   /**

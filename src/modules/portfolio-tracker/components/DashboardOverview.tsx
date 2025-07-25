@@ -221,12 +221,9 @@ export function DashboardOverview() {
   } = usePortfolioSummaries();
   const { data: recentTransactions = [], isLoading: isLoadingTransactions } =
     useRecentTransactions(5);
-  const { profile, refreshUser } = useAuth();
+  const { profile } = useAuth();
   
-  // Refresh user data on component mount to ensure we have the latest currency preferences
-  React.useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+  // Remove unnecessary refreshUser call to prevent excessive API calls
 
   // Get the user's preferred currency and locale
   const preferredCurrency =
