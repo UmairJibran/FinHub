@@ -101,7 +101,7 @@ export function InvestmentChart({ data, swpStartYear, currency }: InvestmentChar
             }}
             tooltip={({ point }) => {
                 const data = (point.data as unknown) as { x: string; y: number; contribution: string };
-                const isSWP = point.serieId === "swp";
+                const isSWP = point.seriesId === "swp";
                 const [year, month] = data.x.split("-");
                 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 return (
