@@ -2,7 +2,6 @@
 
 import type { FC } from 'react';
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
-import * as z from 'zod';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,15 +17,13 @@ const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
   GBP: '£',
 };
 
-const formSchema = z.object({
-  currency: z.enum(['PKR', 'USD', 'INR', 'EUR', 'GBP'] as const),
-  currentInvestment: z.coerce.number().min(0, 'Required'),
-  currentShares: z.coerce.number().min(1, 'Required'),
-  currentPrice: z.coerce.number().min(0.01, 'Required'),
-  targetAvg: z.coerce.number().min(0.01, 'Required'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  currency: SupportedCurrency;
+  currentInvestment: number;
+  currentShares: number;
+  currentPrice: number;
+  targetAvg: number;
+};
 
 export const ShareAveragingCalculator: FC = () => {
   const methods = useForm<FormValues>({
