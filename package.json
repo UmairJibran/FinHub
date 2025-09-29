@@ -37,7 +37,7 @@
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",
     "@types/node": "^20.11.25",
-    "@types/react": "^19.1.9",
+    "@types/react": "^19.1.15",
     "@types/react-dom": "^19.1.9",
     "@typescript-eslint/eslint-plugin": "^8.44.1",
     "@typescript-eslint/parser": "^8.29.1",
